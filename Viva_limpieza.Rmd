@@ -78,12 +78,6 @@ vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
 #Ver si eliminar el registro ""
 ```
 
-### Cancelación de los vuelos
-```{r}
-vuelos$Realizado <- ifelse(is.na(vuelos$Passengers), 1, 0)
-vuelos$Realizado = as.factor(vuelos$Realizado)
-```
-
 ### Variables Dia/Fecha
 ```{r}
 ### Salidas
