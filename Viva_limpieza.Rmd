@@ -9,6 +9,7 @@ output:
     code_download: yes
     theme: journal
     highlight: pygments
+    css: estilos.css
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +17,86 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
+## Librerias
+```{r}
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(lubridate)
+library(purrr)
+library(plotly)
+library(forecast)
+library(readxl)
+library(DataExplorer)
+library(dplyr)
+library(ggplot2)
+library(tm)
+library(wordcloud)
+library(cluster)
+library(factoextra) 
+library(gridExtra)
+library(purrr)
+library(pROC)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+library(ggpubr)
+library(dlookr)
+library(zoo)
+library(caret)
+library(stats)
+library(tseries)
+library(readr)
+library(vars)
+library(syuzhet)
+library(kableExtra)
+library(plotly)
+library(scales)
+library(readxl)
+```
 
+
+# Limpieza de datos
+```{r}
+ventas = read.csv("databases/Sales Tec_Valid.csv")
+vuelos = read.csv("databases/Filghts Tec_Valid.csv")
+```
+
+## Vuelos
+```{r}
+head(vuelos)
+summary(vuelos)
+
+```
+
+```{r}
+vuelos$Origin_Type = as.factor(vuelos$Origin_Type)
+vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
+summary(vuelos$Origin_Type)
+summary(vuelos$Destination_Type)
+#Ver si eliminar el registro ""
+
+unique(vuelos$ArrivalStation)
+```
+
+### Cancelación de los vuelos
+```{r}
+summary(vuelos$Passengers)
+
+vuelos$Realizado <- ifelse(is.na(vuelos$Passengers), 1, 0)
+vuelos$Realizado = as.factor(vuelos$Realizado)
+summary(vuelos$Realizado)
+```
+
+### Join 
+```{r}
+df <- vuelos %>% 
+  left_join(ventas, by = "Flight_ID")
+```
+
+## Ventas 
 
 
 
