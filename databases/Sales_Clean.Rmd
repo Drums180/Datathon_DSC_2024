@@ -1,26 +1,12 @@
 ---
-title: "Viva"
-author: "Datalords"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: yes
-    toc_float: yes
-    theme: journal
-    highlight: pygments
-    css: estilos.css
+title: "Sales Clean"
+author: "David Dominguez - A01570975"
+date: "2024-05-04"
+output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-```
-
-## Ventas Clean
-
-
-# Librerias
+## Libraries
 ```{r}
-library(dplyr)
 library(ggplot2)
 library(dplyr)
 library(readxl)
@@ -56,71 +42,51 @@ library(kableExtra)
 library(plotly)
 library(scales)
 library(readxl)
-library(lubridate)
 ```
 
-
-# Limpieza de datos
+## Database
 ```{r}
-ventas = read.csv("databases/Sales Tec_Valid.csv")
-vuelos = read.csv("databases/Filghts Tec_Valid.csv")
+ventas <- read.csv("Sales TEC_Valid.csv")
 ```
 
-## Vuelos
+## Unicos por Columna de Text
 ```{r}
-head(vuelos)
-summary(vuelos)
+# Función para obtener valores únicos por columna
+unicos_por_columna <- function(data) {
+  # Crear un marco de datos vacío para almacenar los resultados
+  resultados <- data.frame(columna = character(),
+                           valores_unicos = integer(),
+                           stringsAsFactors = FALSE)
+  
+  # Iterar sobre todas las columnas del conjunto de datos
+  for (col in colnames(data)) {
+    # Obtener valores únicos para la columna actual
+    valores <- unique(data[[col]])
+    
+    # Almacenar la longitud de los valores únicos
+    longitud_valores <- length(valores)
+    
+    # Agregar resultados a la tabla
+    resultados <- rbind(resultados, data.frame(columna = col,
+                                               valores_unicos = longitud_valores))
+  }
+  
+  return(resultados)
+}
+
+# Obtener valores únicos por columna
+resultado <- unicos_por_columna(ventas)
+
+# Mostrar el resultado
+print(resultado)
 ```
 
+## Unicos para ProductType y ProductName
 ```{r}
-vuelos$Origin_Type = as.factor(vuelos$Origin_Type)
-vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
-#Ver si eliminar el registro ""
+# Obtener valores únicos para las columnas ProductType y ProductName
+unicos_ProductType <- unique(ventas$ProductType)
+unicos_ProductName <- unique(ventas$ProductName)
 ```
-
-### Cancelación de los vuelos
-```{r}
-vuelos$Realizado <- ifelse(is.na(vuelos$Passengers), 1, 0)
-vuelos$Realizado = as.factor(vuelos$Realizado)
-```
-
-### Variables Dia/Fecha
-```{r}
-### Salidas
-vuelos$STD <- as.POSIXct(vuelos$STD, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
-vuelos$STD_fecha <- as.Date(vuelos$STD)
-vuelos$STD_hora <- format(vuelos$STD, "%H:%M:%S")
-
-vuelos$STA <- as.POSIXct(vuelos$STA, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
-vuelos$STA_fecha <- as.Date(vuelos$STA)
-vuelos$STA_hora <- format(vuelos$STA, "%H:%M:%S")
-
-vuelos$diferencia_horas <- as.numeric(difftime(vuelos$STA, vuelos$STD, units = "hours"))
-vuelos$diferencia_minutos <- vuelos$diferencia_horas * 60
-
-vuelos$STD_Dia_del_mes <- day(vuelos$STD_fecha)
-vuelos$STD_Mes <- month(vuelos$STD_fecha, label = TRUE)
-vuelos$STD_Año <- year(vuelos$STD_fecha)
-
-vuelos$STA_Dia_del_mes <- day(vuelos$STA_fecha)
-vuelos$STA_Mes <- month(vuelos$STA_fecha, label = TRUE)
-vuelos$STA_Año <- year(vuelos$STA_fecha)
-```
-
-### Porcentajes
-```{r}
-vuelos <- vuelos %>%
-  mutate(Porcentaje_Capacidad = (Passengers / Capacity) * 100,
-         Porcentaje_Reservas = (Bookings/Capacity)*100)
-```
-
-### Join 
-```{r}
-df <- vuelos %>% 
-  left_join(ventas, by = "Flight_ID")
-```
-
-## Ventas 
 
 ## Corrección ProductType
 ```{r}
@@ -419,5 +385,9 @@ ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
 head(ventas)
 ```
 
-
+## Exportar a CSV
+```{r}
+# Exportar el dataframe a un archivo CSV
+write.csv(ventas, "Sales_Clean.csv")
+```
 
