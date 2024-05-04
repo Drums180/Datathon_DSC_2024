@@ -1,0 +1,49 @@
+---
+title: "VivAerobus Modelo Pasajeros"
+author: "Omega Datalords"
+date: "2024-05-04"
+output: html_document
+---
+
+# Modelo de Pasajeros
+
+## Database
+```{r}
+# Seleccionar y preparar los datos
+vuelos_alt <- df_alt %>%
+  dplyr::select(Flight_ID, Destination_Type, Origin_Type, Capacity, Bookings, 
+                STD_hora, STA_hora, diferencia_horas, diferencia_minutos, 
+                STD_Dia_del_mes, STA_Dia_del_mes, STA_Mes, STD_Mes, 
+                STA_Año, STD_Año, Porcentaje_Reservas, ruta) %>%
+  group_by(Flight_ID) %>%
+  summarise(across(everything(), mean, na.rm = TRUE))  # Añadiendo na.rm = TRUE para manejar NA
+
+# Revisar el dataframe resultante
+head(vuelos_alt)
+```
+
+## Modelo de Regresión Multiple 
+
+```{r}
+# Convertir las variables horarias de hh:mm:ss a minutos desde medianoche
+vuelos <- vuelos %>%
+  mutate(
+    STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora)),
+    STA_hora = hour(hms(STA_hora)) * 60 + minute(hms(STA_hora))
+  )
+```
+
+
+```{r}
+# Modelo de regresión múltiple
+modelo_pasajeros <- lm(Passengers ~ Destination_Type + Origin_Type + Capacity + Bookings + 
+                        STD_hora + STA_hora + diferencia_horas + diferencia_minutos + 
+                        STD_Dia_del_mes + STA_Dia_del_mes + STA_Mes + STD_Mes + 
+                        STA_Año + STD_Año + Porcentaje_Reservas + ruta, 
+                        data = vuelos)
+
+# Resumen del modelo
+summary(modelo_pasajeros)
+```
+
+
