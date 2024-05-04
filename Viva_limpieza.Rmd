@@ -118,6 +118,10 @@ df <- vuelos %>%
   left_join(ventas, by = "Flight_ID")
 ```
 
+```{r}
+df_alt <- subset(df, select = -c(TotalSales, Aeronave))
+```
+
 ## Ventas 
 
 
