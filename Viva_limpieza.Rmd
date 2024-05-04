@@ -110,6 +110,26 @@ vuelos <- vuelos %>%
          Porcentaje_Reservas = (Bookings/Capacity)*100)
 ```
 
+```{r}
+vuelos_alt <- vuelos %>%
+  filter(STD_Año != 2024)%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")
+```
+
+```{r}
+vuelos_alt <- vuelos_alt %>%
+  dplyr::select(-Aeronave)
+```
+
+```{r}
+vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
+```
+
+
 ## Ventas 
 
 ### Corrección ProductType
@@ -419,7 +439,7 @@ head(ventas)
 
 ### Join 
 ```{r}
-df <- vuelos %>% 
+df <- vuelos_alt %>% 
   left_join(ventas, by = "Flight_ID")
 ```
 
@@ -452,5 +472,4 @@ df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
 ```{r}
 boxplot(df_alt$diferencia_horas, main = "Boxplot de la Variable", ylab = "Minutos")
 ```
-
 
