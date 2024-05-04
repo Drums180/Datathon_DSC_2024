@@ -1,0 +1,50 @@
+/* Estilos para el cuerpo del documento */
+body {
+    font-family: Arial, sans-serif; /* Fuente predeterminada */
+    line-height: 1.6; /* Espaciado entre líneas */
+}
+
+/* Estilos para los encabezados de nivel 1 */
+h1 {
+    color: #3963d8; /* Color azul para los encabezados de nivel 1 */
+    font-size: 2.5em; /* Tamaño de fuente grande */
+    font-weight: bold; /* Texto en negrita */
+}
+
+/* Estilos para los encabezados de nivel 2 */
+h2 {
+    color: #795ae9; /* Color púrpura para los encabezados de nivel 2 */
+    font-size: 2em; /* Tamaño de fuente grande */
+    font-weight: bold; /* Texto en negrita */
+}
+
+/* Estilos para los elementos de título, subtítulo, autor y fecha */
+.title, .subtitle, .author, .date {
+    text-align: center; /* Centrar el texto */
+    margin-bottom: 20px; /* Margen inferior para separar los elementos */
+}
+
+/* Estilos para los párrafos */
+p {
+    text-align: justify; /* Justificar el texto */
+    margin-bottom: 15px; /* Margen inferior para separar los párrafos */
+}
+
+/* Estilos para los bloques de código */
+pre {
+    background-color: #f4f4f4; /* Fondo gris claro para los bloques de código */
+    padding: 10px; /* Espaciado interno */
+    border-radius: 5px; /* Bordes redondeados */
+    overflow-x: auto; /* Barras de desplazamiento horizontal */
+}
+
+/* Estilos para el índice flotante */
+.tocify {
+    background-color: #f4f4f4; /* Fondo gris claro para el índice flotante */
+    border-radius: 5px; /* Bordes redondeados */
+    padding: 10px; /* Espaciado interno */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+}
+
+
+  
