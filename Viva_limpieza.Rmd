@@ -2,8 +2,13 @@
 title: "Viva"
 author: "Datalords"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_document:
+    toc: yes
+    toc_float: yes
+    code_download: yes
+    theme: journal
+    highlight: pygments
 ---
 
 ```{r setup, include=FALSE}
