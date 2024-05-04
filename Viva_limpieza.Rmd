@@ -15,9 +15,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-## Ventas Clean
-
-
 # Librerias
 ```{r}
 library(dplyr)
@@ -60,7 +57,9 @@ library(lubridate)
 ```
 
 
+
 # Limpieza de datos
+
 ```{r}
 ventas = read.csv("databases/Sales Tec_Valid.csv")
 vuelos = read.csv("databases/Filghts Tec_Valid.csv")
@@ -68,20 +67,15 @@ vuelos = read.csv("databases/Filghts Tec_Valid.csv")
 
 ## Vuelos
 ```{r}
-head(vuelos)
-summary(vuelos)
+#head(vuelos)
+#summary(vuelos)
 ```
 
+### Tipo de dato
 ```{r}
 vuelos$Origin_Type = as.factor(vuelos$Origin_Type)
 vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
 #Ver si eliminar el registro ""
-```
-
-### Cancelación de los vuelos
-```{r}
-vuelos$Realizado <- ifelse(is.na(vuelos$Passengers), 1, 0)
-vuelos$Realizado = as.factor(vuelos$Realizado)
 ```
 
 ### Variables Dia/Fecha
@@ -109,20 +103,23 @@ vuelos$STA_Año <- year(vuelos$STA_fecha)
 
 ### Porcentajes
 ```{r}
+vuelos$Passengers <- ifelse(vuelos$Passengers > vuelos$Capacity, vuelos$Capacity, vuelos$Passengers)
+
 vuelos <- vuelos %>%
   mutate(Porcentaje_Capacidad = (Passengers / Capacity) * 100,
          Porcentaje_Reservas = (Bookings/Capacity)*100)
 ```
 
-### Join 
-```{r}
-df <- vuelos %>% 
-  left_join(ventas, by = "Flight_ID")
-```
-
 ## Ventas 
 
-## Corrección ProductType
+### Corrección ProductType
+#### Unicos para ProductType y ProductName
+```{r}
+# Obtener valores únicos para las columnas ProductType y ProductName
+unicos_ProductType <- unique(ventas$ProductType)
+unicos_ProductName <- unique(ventas$ProductName)
+```
+
 ```{r}
 # Crear un vector con los valores corregidos
 valores_corregidos <- c("Botanas", "Licores", "Vivabus", "Transportaciones CUN", "Galletas",
@@ -138,7 +135,8 @@ ventas$ProductType <- factor(ventas$ProductType, levels = unicos_ProductType, la
 print("Valores únicos corregidos para ProductType:")
 print(unique(ventas$ProductType))
 ```
-## Corrección ProductName
+
+### Corrección ProductName
 ```{r}
 # Crear un vector con los valores corregidos sin acentos
 valores_corregidos <- c("Carne Seca Habanero",
@@ -368,7 +366,7 @@ print("Valores corregidos para ProductName:")
 print(valores_corregidos)
 ```
 
-## Columna Type (Servicio - Fisico)
+### Columna Type (Servicio - Fisico)
 ```{r}
 # Definir una función para asignar el tipo según el tipo de producto
 asignar_tipo <- function(producto_tipo) {
@@ -388,7 +386,7 @@ ventas$Type <- sapply(ventas$ProductType, asignar_tipo)
 head(ventas)
 ```
 
-## Partición Type Fisico
+### Partición Type Fisico
 ```{r message=FALSE, warning=FALSE}
 # Función para asignar el subtipo según el tipo de producto
 asignar_subtipo <- function(producto_tipo, tipo) {
@@ -419,5 +417,40 @@ ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
 head(ventas)
 ```
 
+### Join 
+```{r}
+df <- vuelos %>% 
+  left_join(ventas, by = "Flight_ID")
+```
+
+
+## Correciones base
+```{r}
+df_alt <- df %>%
+  filter(Type != "Servicios") %>%
+  filter(ProductType!= "Specials")%>%
+  filter(STD_Año != 2024)%>%
+  filter(ProductType != "Combos Crew")%>%
+  filter(ProductType != "Ofertas")%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")
+```
+
+```{r}
+df_alt <- df_alt %>%
+  dplyr::select(-Aeronave, -TotalSales)
+```
+
+```{r}
+df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
+```
+
+
+```{r}
+boxplot(df_alt$diferencia_horas, main = "Boxplot de la Variable", ylab = "Minutos")
+```
 
 
