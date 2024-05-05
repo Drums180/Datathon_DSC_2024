@@ -84,10 +84,15 @@ vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
 vuelos$STD <- as.POSIXct(vuelos$STD, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STD_fecha <- as.Date(vuelos$STD)
 vuelos$STD_hora <- format(vuelos$STD, "%H:%M:%S")
+vuelos <- vuelos %>%
+  mutate(
+    STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora))
+  )
 
 vuelos$STA <- as.POSIXct(vuelos$STA, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STA_fecha <- as.Date(vuelos$STA)
 vuelos$STA_hora <- format(vuelos$STA, "%H:%M:%S")
+
 
 vuelos$diferencia_horas <- as.numeric(difftime(vuelos$STA, vuelos$STD, units = "hours"))
 vuelos$diferencia_minutos <- vuelos$diferencia_horas * 60
@@ -96,15 +101,7 @@ vuelos$STD_Dia_del_mes <- day(vuelos$STD_fecha)
 vuelos$STD_Mes <- month(vuelos$STD_fecha, label = TRUE)
 vuelos$STD_Año <- year(vuelos$STD_fecha)
 
-vuelos$STA_Dia_del_mes <- day(vuelos$STA_fecha)
-vuelos$STA_Mes <- month(vuelos$STA_fecha, label = TRUE)
-vuelos$STA_Año <- year(vuelos$STA_fecha)
-
-vuelos$STD_DiaSemana <- weekdays(vuelos$STD_fecha)
-vuelos$STA_DiaSemana <- weekdays(vuelos$STA_fecha)
-dias_semana <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-vuelos$STD_DiaSemana <- match(vuelos$STD_DiaSemana, dias_semana)
-vuelos$STA_DiaSemana <- match(vuelos$STA_DiaSemana, dias_semana)
+vuelos$STD_DiaSemana <- wday(vuelos$STD_fecha)
 ```
 
 ### Porcentajes
@@ -127,10 +124,7 @@ vuelos_alt <- vuelos %>%
   filter(STD_Año != 2025)
 ```
 
-```{r}
-vuelos_alt <- vuelos_alt %>%
-  dplyr::select(-Aeronave)
-```
+
 
 ```{r}
 vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
@@ -464,50 +458,112 @@ df <- vuelos_alt %>%
   left_join(ventas, by = "Flight_ID")
 ```
 
+paste del departure station y destination type
+
 ```{r}
-df_2 <- subset(df_alt, select = -STD)
-df_2 <- subset(df_2, select = -STA)
-df_2 <- subset(df_2, select = -Flight_ID)
-df_2 <- subset(df_2, select = -STD_Dia_del_mes)
-df_2 <- subset(df_2, select = -STD_Año)
-df_2 <- subset(df_2, select = -STD_Mes)
-df_2 <- subset(df_2, select = -STA_Dia_del_mes)
-df_2 <- subset(df_2, select = -STA_Año)
-df_2 <- subset(df_2, select = -STA_Mes)
-df_2 <- subset(df_2, select = -Porcentaje_Reservas)
-df_2 <- subset(df_2, select = -ProductType)
-df_2 <- subset(df_2, select = -Type)
-df_2 <- subset(df_2, select = -SubType)
-df_2 <- subset(df_2, select = -DepartureStation)
-df_2 <- subset(df_2, select = -ArrivalStation)
-df_2 <- subset(df_2, select = -Passengers)
-df_2 <- subset(df_2, select = -Bookings)
-df_2 <- subset(df_2, select = -diferencia_minutos)
+df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
+
 ```
 
+
+
 ```{r}
-df_2$Capacity <- ifelse(df_2$Capacity > 230, "Grande",
-                              ifelse(df_2$Capacity >= 200 & df_2$Capacity <= 230, "Mediano", "Pequeño"))
+df_alt$Destination_Type  <- NULL
+df_alt$Origin_Type<- NULL
+df_alt$STA_fecha<- NULL
+df_alt$STA_hora<- NULL
+df_alt$Longitud_viaje<- NULL
+```
 
-df_2$diferencia_horas <- ifelse(df_2$diferencia_horas > 3, "Largo",
-                              ifelse(df_2$diferencia_horas >= 2 & df_2$diferencia_horas <= 3, "Medio", "Corto"))
 
-df_2$Porcentaje_Capacidad <- ifelse(df_2$Porcentaje_Capacidad > 80, "Poco espacio a lleno",
-                              ifelse(df_2$Porcentaje_Capacidad >= 50 & df_2$Porcentaje_Capacidad <= 80, "Moderadamente lleno", "Mitad o menos"))
 
-df_2$Capacity <- ifelse(df_2$Capacity > 230, "Grande",
-                              ifelse(df_2$Capacity >= 200 & df_2$Capacity <= 230, "Mediano", "Pequeño"))
+```{r}
+hora_producto <- df_alt %>%
+  group_by(STD_hora, ProductName) %>%
+  summarise(ventas_totales_producto_hora = sum(Quantity),
+            ventas_promedio_producto_hora = mean(Quantity))
 
-df_2$STD_hora <- substr(df_2$STD_hora, 1, 2)
+df_alt <- left_join(df_alt, hora_producto, by=c("STD_hora","ProductName"))
 
-df_2$STD_hora <- ifelse(as.numeric(df_2$STD_hora) >= 0 & as.numeric(df_2$STD_hora) < 6, "Madrugada a mañana",
-                            ifelse(as.numeric(df_2$STD_hora) >= 6 & as.numeric(df_2$STD_hora) < 18, "Tarde", "Noche"))
+ruta_producto <- df_alt %>%
+  group_by(ruta, ProductName) %>%
+  summarise(ventas_totales_producto_ruta = sum(Quantity),
+            ventas_promedio_producto_ruta = mean(Quantity))
 
-df_2$STA_hora <- substr(df_2$STA_hora, 1, 2)
+df_alt <- left_join(df_alt, ruta_producto, by=c("ruta","ProductName"))
 
-df_2$STA_hora <- ifelse(as.numeric(df_2$STA_hora) >= 0 & as.numeric(df_2$STA_hora) < 6, "Madrugada a mañana",
-                            ifelse(as.numeric(df_2$STA_hora) >= 6 & as.numeric(df_2$STA_hora) < 18, "Tarde", "Noche"))
+```
 
-colnames(df_2)[colnames(df_2) == "diferencia_horas"] <- "Longitud_viaje"
+
+
+
+```{r}
+df_alt$ruta <- as.factor(df_alt$ruta)
+df_alt$Flight_ID <- NULL
+df_alt$ProductType <- NULL
+df_alt$Type <- NULL
+df_alt$STA_fecha <- NULL
+df_alt$STD_fecha <- NULL
+df_alt$STD <- NULL
+df_alt$STA <- NULL
+df_alt$STA_hora <- NULL
+df_alt$STD_Año <- NULL
+df_alt$DepartureStation <- NULL
+df_alt$ArrivalStation <- NULL
+
+
+set.seed(123)
+
+# Paso 1: Dividir el conjunto de datos en entrenamiento (50%) y temporal (50%)
+trainIndex1 <- createDataPartition(y = df_alt$Quantity, p = 0.5, list = FALSE, times = 1)
+train <- df_alt[trainIndex1, ]
+test <- df_alt[-trainIndex1, ]
+
+train$ProductName <- NULL
+
+```
+
+
+```{r}
+model_ols <- lm(Quantity ~ Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta+ruta, data = train)
+summary(model_ols)
+
+# Hacer predicciones
+ols_predictions <- predict(model_ols, test)
+
+# RMSE
+# RMSE sin aplicar exp a las predicciones
+RMSE_ols <- rmse(ols_predictions, test$Quantity)
+RMSE_ols
+
+cbind(test, ols_predictions)
+```
+
+
+```{r}
+vif(model_ols)
+```
+
+
+```{r}
+rf_model <- randomForest(
+  Quantity ~ Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, 
+  data = train,
+  ntree = 10,         # Número de árboles en el bosque
+  mtry = 2,            # Número de variables a considerar en cada división del árbol
+  nodesize = 10,       # Tamaño mínimo del nodo terminal
+  maxnodes = NULL,     # Máximo número de nodos terminales permitidos
+  importance = TRUE,   # Calcular la importancia de las variables
+  proximity = FALSE,   # Calcular la matriz de proximidad
+  do.trace = FALSE     # Mostrar el progreso del proceso
+)
+
+
+# Predicción – cv test data
+rf_prediction <- predict(rf_model,test)
+
+# RMSE
+RMSE_rf <- rmse(rf_prediction, test$Quantity)
+RMSE_rf
 ```
 
