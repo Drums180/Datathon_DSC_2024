@@ -88,11 +88,7 @@ vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
 # Se le brindó el formato correcto de fecha y hora de las columnas que lo requieran para separarlas según su fecha y su hora específica
 vuelos$STD <- as.POSIXct(vuelos$STD, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STD_fecha <- as.Date(vuelos$STD)
-vuelos$STD_hora <- format(vuelos$STD, "%H:%M:%S")
-vuelos <- vuelos %>%
-  mutate(
-    STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora))
-  )
+vuelos$STD_hora <- format(vuelos$STD, "%H")
 
 vuelos$STA <- as.POSIXct(vuelos$STA, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STA_fecha <- as.Date(vuelos$STA)
@@ -144,11 +140,6 @@ vuelos_predict <- vuelos %>%
   filter(Destination_Type != "")%>%
   filter(STD_Año != 2025)
 
-# Pequeña correción en la hora para convertir la variable en un formato de 24 horas tomando en cuenta únicamente la hora de salida
-vuelos_predict <- vuelos_predict %>%
-  mutate(
-    STD_hora = hour(hms(STD_hora))
-  )
 ```
 
 
@@ -161,11 +152,6 @@ vuelos_alt <- vuelos_alt %>%
 ```{r}
 # Unimos las variables del destino de origen y de salida para crear un indicador para cada ruta realizada por los aviones y, de nuevo, se identifica únicamente la hora de salida de cada vuelo
 vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
-
-vuelos_alt <- vuelos_alt %>%
-  mutate(
-    STD_hora = hour(hms(STD_hora))
-  )
 ```
 
 
@@ -585,7 +571,7 @@ cbind(test, tree_predictions)
 
 ** Cabe mencionar que lo ideal sería que el apartado de "ntree" contenga valores por encima de 300 para tener un modelo más robusto, ya que esto haría que el modelo genere cientos de árboles de decisión y elija el mejor. Sin embargo, por la cantidad de datos que contiene la base de datos, correr este chunk con esas especificaciones puede tomar incluso días generar el resultado con el poder de máquina con el que contamos actualmente. Le sugerimos fuertemente al cliente final replicar este modelo con un número de árboles mucho mayor para obtener mejores resultados. 
 
-``{r}
+```{r}
 rf_model <- randomForest(
   Quantity ~ Passengers+Capacity+STD_Mes+STD_DiaSemana+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, 
   data = train,
@@ -613,7 +599,7 @@ MAPE_rf
 
 ## XGBoost
 ### Preparación de Datos (matrices)
-``{r}
+```{r}
 xg_df_alt <- df_alt %>%
   dplyr::select(Quantity, Passengers,Capacity,STD_Mes,STD_DiaSemana,ventas_totales_producto_hora,ventas_promedio_producto_hora,ventas_totales_producto_ruta,ventas_promedio_producto_ruta)
 
@@ -646,7 +632,7 @@ watchlist = list(train=xgb_train, test=xgb_test)
 ### Parameter Tunning
 
 ### Modelo XGBoost con parámetros óptimos
-``{r}
+```{r}
 # Definir los parámetros óptimos obtenidos
 nrounds <- 100
 max_depth <- 5
@@ -688,7 +674,7 @@ xgb.plot.importance(importance_matrix, xlab = "Explanatory Variables X's Importa
 # Comparación de modelos
 Los resultados finales de cada modelo representan el desempeño que tuvieron frente a los datos de prueba después de haber sido entrenados. De forma general, aprovechando los recursos visuales del siguiente código, el mejor modelo es aquel que tiene RMSE y MAPE más bajos
 
-``{r}
+```{r}
 metricas <- c("RMSE", "MAPE")
 ols_values <- c(RMSE_ols, MAPE_ols)
 rf_values <- c(RMSE_rf, MAPE_rf)
