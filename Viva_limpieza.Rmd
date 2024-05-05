@@ -468,8 +468,50 @@ df_alt <- df_alt %>%
 df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
 ```
 
+```{r}
+df_2 <- subset(df_alt, select = -STD)
+df_2 <- subset(df_2, select = -STA)
+df_2 <- subset(df_2, select = -Flight_ID)
+df_2 <- subset(df_2, select = -STD_Dia_del_mes)
+df_2 <- subset(df_2, select = -STD_Año)
+df_2 <- subset(df_2, select = -STD_Mes)
+df_2 <- subset(df_2, select = -STA_Dia_del_mes)
+df_2 <- subset(df_2, select = -STA_Año)
+df_2 <- subset(df_2, select = -STA_Mes)
+df_2 <- subset(df_2, select = -Porcentaje_Reservas)
+df_2 <- subset(df_2, select = -ProductType)
+df_2 <- subset(df_2, select = -Type)
+df_2 <- subset(df_2, select = -SubType)
+df_2 <- subset(df_2, select = -DepartureStation)
+df_2 <- subset(df_2, select = -ArrivalStation)
+df_2 <- subset(df_2, select = -Passengers)
+df_2 <- subset(df_2, select = -Bookings)
+df_2 <- subset(df_2, select = -diferencia_minutos)
+```
 
 ```{r}
-boxplot(df_alt$diferencia_horas, main = "Boxplot de la Variable", ylab = "Minutos")
+df_2$Capacity <- ifelse(df_2$Capacity > 230, "Grande",
+                              ifelse(df_2$Capacity >= 200 & df_2$Capacity <= 230, "Mediano", "Pequeño"))
+
+df_2$diferencia_horas <- ifelse(df_2$diferencia_horas > 3, "Largo",
+                              ifelse(df_2$diferencia_horas >= 2 & df_2$diferencia_horas <= 3, "Medio", "Corto"))
+
+df_2$Porcentaje_Capacidad <- ifelse(df_2$Porcentaje_Capacidad > 80, "Poco espacio a lleno",
+                              ifelse(df_2$Porcentaje_Capacidad >= 50 & df_2$Porcentaje_Capacidad <= 80, "Moderadamente lleno", "Mitad o menos"))
+
+df_2$Capacity <- ifelse(df_2$Capacity > 230, "Grande",
+                              ifelse(df_2$Capacity >= 200 & df_2$Capacity <= 230, "Mediano", "Pequeño"))
+
+df_2$STD_hora <- substr(df_2$STD_hora, 1, 2)
+
+df_2$STD_hora <- ifelse(as.numeric(df_2$STD_hora) >= 0 & as.numeric(df_2$STD_hora) < 6, "Madrugada a mañana",
+                            ifelse(as.numeric(df_2$STD_hora) >= 6 & as.numeric(df_2$STD_hora) < 18, "Tarde", "Noche"))
+
+df_2$STA_hora <- substr(df_2$STA_hora, 1, 2)
+
+df_2$STA_hora <- ifelse(as.numeric(df_2$STA_hora) >= 0 & as.numeric(df_2$STA_hora) < 6, "Madrugada a mañana",
+                            ifelse(as.numeric(df_2$STA_hora) >= 6 & as.numeric(df_2$STA_hora) < 18, "Tarde", "Noche"))
+
+colnames(df_2)[colnames(df_2) == "diferencia_horas"] <- "Longitud_viaje"
 ```
 
