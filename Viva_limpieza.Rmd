@@ -1,7 +1,7 @@
 ---
 title: "Viva"
 author: "Datalords"
-date: "`r Sys.Date()`"
+date: "r Sys.Date()"
 output:
   html_document:
     toc: yes
@@ -10,6 +10,7 @@ output:
     highlight: pygments
     css: estilos.css
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -54,6 +55,9 @@ library(plotly)
 library(scales)
 library(readxl)
 library(lubridate)
+library(Metrics)
+library(randomForest)
+library(car)
 ```
 
 
@@ -120,16 +124,12 @@ vuelos_alt <- vuelos %>%
   filter(DepartureStation != "")%>%
   filter(ArrivalStation != "")%>%
   filter(Origin_Type != "")%>%
-  filter(Destination_Type != "")%>%
-  filter(STD_Año != 2025)
+  filter(Destination_Type != "")
 ```
-
-
 
 ```{r}
 vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
 ```
-
 
 ## Ventas 
 
@@ -383,8 +383,8 @@ valores_corregidos <- c("Carne Seca Habanero",
                         "Taxi Huatulco Mazunte/Zipolite 3pax")
 
 # Verificar que los valores corregidos estén bien
-print("Valores corregidos para ProductName:")
-print(valores_corregidos)
+#print("Valores corregidos para ProductName:")
+#print(valores_corregidos)
 ```
 
 ### Columna Type (Servicio - Fisico)
@@ -435,21 +435,7 @@ asignar_subtipo <- function(producto_tipo, tipo) {
 ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
 
 # Verificar que se haya creado correctamente la nueva columna
-head(ventas)
-```
-
-
-```{r}
-ventas_alt <- ventas %>%
-  filter(Type != "Servicios") %>%
-  filter(ProductType!= "Specials")%>%
-  filter(ProductType != "Combos Crew")%>%
-  filter(ProductType != "Ofertas")
-```
-
-```{r}
-ventas_alt <- ventas_alt %>%
-  dplyr::select(-TotalSales)
+#head(ventas)
 ```
 
 ### Join 
@@ -458,24 +444,25 @@ df <- vuelos_alt %>%
   left_join(ventas, by = "Flight_ID")
 ```
 
-paste del departure station y destination type
-
+## Correciones base
 ```{r}
-df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
-
+df_alt <- df %>%
+  filter(Type != "Servicios") %>%
+  filter(ProductType!= "Specials")%>%
+  filter(STD_Año != 2024)%>%
+  filter(ProductType != "Combos Crew")%>%
+  filter(ProductType != "Ofertas")%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")
 ```
 
-
-
 ```{r}
-df_alt$Destination_Type  <- NULL
-df_alt$Origin_Type<- NULL
-df_alt$STA_fecha<- NULL
-df_alt$STA_hora<- NULL
-df_alt$Longitud_viaje<- NULL
+df_alt <- df_alt %>%
+  dplyr::select(-Aeronave, -TotalSales, -Destination_Type, -Origin_Type, -STA_fecha, -STA_hora)
 ```
-
-
 
 ```{r}
 hora_producto <- df_alt %>%
@@ -491,27 +478,17 @@ ruta_producto <- df_alt %>%
             ventas_promedio_producto_ruta = mean(Quantity))
 
 df_alt <- left_join(df_alt, ruta_producto, by=c("ruta","ProductName"))
-
 ```
 
-
-
-
 ```{r}
+df_alt <- df_alt %>%
+  dplyr::select(-Flight_ID, -STD, -STA, -STD_fecha, -diferencia_horas, ProductType, -Type, -SubType, -DepartureStation, -ArrivalStation)
+
 df_alt$ruta <- as.factor(df_alt$ruta)
-df_alt$Flight_ID <- NULL
-df_alt$ProductType <- NULL
-df_alt$Type <- NULL
-df_alt$STA_fecha <- NULL
-df_alt$STD_fecha <- NULL
-df_alt$STD <- NULL
-df_alt$STA <- NULL
-df_alt$STA_hora <- NULL
-df_alt$STD_Año <- NULL
-df_alt$DepartureStation <- NULL
-df_alt$ArrivalStation <- NULL
+```
 
-
+# Modelos
+```{r}
 set.seed(123)
 
 # Paso 1: Dividir el conjunto de datos en entrenamiento (50%) y temporal (50%)
@@ -520,12 +497,10 @@ train <- df_alt[trainIndex1, ]
 test <- df_alt[-trainIndex1, ]
 
 train$ProductName <- NULL
-
 ```
 
-
 ```{r}
-model_ols <- lm(Quantity ~ Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta+ruta, data = train)
+model_ols <- lm(Quantity ~ STD_DiaSemana+Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta+ruta, data = train)
 summary(model_ols)
 
 # Hacer predicciones
@@ -539,15 +514,13 @@ RMSE_ols
 cbind(test, ols_predictions)
 ```
 
-
 ```{r}
 vif(model_ols)
 ```
 
-
 ```{r}
 rf_model <- randomForest(
-  Quantity ~ Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, 
+  Quantity ~ Passengers+Capacity+STD_Mes+STD_DiaSemana+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, 
   data = train,
   ntree = 10,         # Número de árboles en el bosque
   mtry = 2,            # Número de variables a considerar en cada división del árbol
@@ -566,4 +539,3 @@ rf_prediction <- predict(rf_model,test)
 RMSE_rf <- rmse(rf_prediction, test$Quantity)
 RMSE_rf
 ```
-
