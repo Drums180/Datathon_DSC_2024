@@ -99,6 +99,12 @@ vuelos$STD_Año <- year(vuelos$STD_fecha)
 vuelos$STA_Dia_del_mes <- day(vuelos$STA_fecha)
 vuelos$STA_Mes <- month(vuelos$STA_fecha, label = TRUE)
 vuelos$STA_Año <- year(vuelos$STA_fecha)
+
+vuelos$STD_DiaSemana <- weekdays(vuelos$STD_fecha)
+vuelos$STA_DiaSemana <- weekdays(vuelos$STA_fecha)
+dias_semana <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+vuelos$STD_DiaSemana <- match(vuelos$STD_DiaSemana, dias_semana)
+vuelos$STA_DiaSemana <- match(vuelos$STA_DiaSemana, dias_semana)
 ```
 
 ### Porcentajes
@@ -444,7 +450,7 @@ ventas_alt <- ventas %>%
   filter(Type != "Servicios") %>%
   filter(ProductType!= "Specials")%>%
   filter(ProductType != "Combos Crew")%>%
-  filter(ProductType != "Ofertas")%>%
+  filter(ProductType != "Ofertas")
 ```
 
 ```{r}
