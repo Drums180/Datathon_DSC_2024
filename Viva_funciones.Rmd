@@ -1,0 +1,168 @@
+---
+title: "Funcion"
+author: "Datalords"
+date: "r Sys.Date()"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: journal
+    highlight: pygments
+    css: estilos.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+```{r}
+productos_distintos <- unique(df_alt$ProductName)
+
+# Crear un nuevo DataFrame con los valores distintos
+mdm_productos <- data.frame(columna = productos_distintos)
+```
+
+
+# Hora Producto
+## Promedio
+```{r}
+vpph <- function(producto, hora) {
+  # Filtra el dataframe para obtener el valor de ventas_promedio_producto_hora basado en los valores dados
+  ph <- hora_producto$ventas_promedio_producto_hora[hora_producto$ProductName == producto & hora_producto$STD_hora == hora]
+  
+  # Retorna el valor obtenido (o NA si no se encuentra coincidencia)
+  return(ph)
+}
+```
+
+## Totales
+```{r}
+vtph <- function(producto, hora) {
+  # Filtra el dataframe para obtener el valor de ventas_promedio_producto_hora basado en los valores dados
+  th <- hora_producto$ventas_totales_producto_hora[hora_producto$ProductName == producto & hora_producto$STD_hora == hora]
+  
+  # Retorna el valor obtenido (o NA si no se encuentra coincidencia)
+  return(th)
+}
+```
+
+# Ruta Producto
+## Promedio
+```{r}
+vppr <- function(producto, ruta) {
+  # Filtra el dataframe para obtener el valor de ventas_promedio_producto_hora basado en los valores dados
+  pr <- ruta_producto$ventas_promedio_producto_ruta[ruta_producto$ProductName == producto & ruta_producto$ruta == ruta]
+  
+  return(pr)
+}
+```
+## Totales
+```{r}
+vtpr <- function(producto, ruta) {
+  # Filtra el dataframe para obtener el valor de ventas_promedio_producto_hora basado en los valores dados
+  tr <- ruta_producto$ventas_totales_producto_ruta[ruta_producto$ProductName == producto & ruta_producto$ruta == ruta]
+  
+  return(tr)
+}
+```
+
+# Predicción
+```{r}
+hora <- "10" 
+ruta <- "AB AK" 
+pasajeros = 240
+capacity = 280
+mes = "oct"
+dia_sem = 5
+Dmes = 17
+```
+
+```{r}
+aeropasajeros <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
+  
+  
+}
+```
+
+```{r}
+aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
+  resultados_df <- data.frame()
+  
+  for (i in 1:nrow(mdm_productos)) {
+    # Accede a cada fila usando df[i,]
+    producto = (mdm_productos[i,])
+  
+    # Llama a la función con los valores deseados
+    promedio_hora = vpph(producto, hora)
+    totales_hora = vtph(producto, hora)
+    promedio_ruta = vppr(producto, ruta)
+    totales_ruta = vtpr(producto, ruta)
+    
+  #### TRATAR LOS NULOS ####  
+    if (identical(promedio_hora, numeric(0)) || is.null(promedio_hora)) {
+    promedio_hora <- 0
+  }
+    if (identical(totales_hora, numeric(0)) || is.null(totales_hora)) {
+    totales_hora <- 0
+    }
+    if (identical(promedio_ruta, numeric(0)) || is.null(promedio_ruta)) {
+    promedio_ruta <- 0
+    }
+    if (identical(totales_ruta, numeric(0)) || is.null(totales_ruta)) {
+    totales_ruta <- 0
+    }
+    
+    totales_hora <- replace(totales_hora, is.na(totales_hora), 0)
+    promedio_hora <- replace(promedio_hora, is.na(promedio_hora), 0)
+    totales_ruta <- replace(totales_ruta, is.na(totales_ruta), 0)
+    promedio_ruta <- replace(promedio_ruta, is.na(promedio_ruta), 0)
+    
+    # Reemplazar valores vacíos con ceros
+    pasajeros <- ifelse(length(pasajeros) > 0, pasajeros, 0)
+    capacity <- ifelse(length(capacity) > 0, capacity, 0)
+    mes <- ifelse(length(mes) > 0, mes, 0)
+    Dmes <- ifelse(length(Dmes) > 0, Dmes, 0)
+    dia_sem <- ifelse(length(dia_sem) > 0, dia_sem, 0)
+    totales_hora <- ifelse(length(totales_hora) > 0, totales_hora, 0)
+    promedio_hora <- ifelse(length(promedio_hora) > 0, promedio_hora, 0)
+    totales_ruta <- ifelse(length(totales_ruta) > 0, totales_ruta, 0)
+    promedio_ruta <- ifelse(length(promedio_ruta) > 0, promedio_ruta, 0)
+
+    newdata <- data.frame(
+    Passengers = pasajeros,
+    Capacity = capacity,
+    STD_Mes = mes,
+    STD_Dia_del_mes = Dmes,
+    STD_DiaSemana = dia_sem,
+    ventas_totales_producto_hora = totales_hora,
+    ventas_promedio_producto_hora = promedio_hora,
+    ventas_totales_producto_ruta = totales_ruta,
+    ventas_promedio_producto_ruta = promedio_ruta
+    )
+
+    # Hacer la predicción
+    prediccion <- predict(model_ols, newdata) 
+    
+    resultados_list =list(c(producto, prediccion))
+    temp_df <- as.data.frame(t(unlist(resultados_list)))
+
+    # Agregar el dataframe temporal al dataframe principal
+    resultados_df <- rbind(resultados_df, temp_df)
+  
+  }
+  # Vector con los nuevos nombres de las columnas
+  nuevos_nombres <- c("Producto", "Cantidad") 
+  names(resultados_df) <- nuevos_nombres
+  resultados_df$Cantidad <- as.numeric(resultados_df$Cantidad)
+  resultados_df$Cantidad <- ifelse(resultados_df$Cantidad > 0.5, ceiling(resultados_df$Cantidad), floor(resultados_df$Cantidad))
+  resultados_df <- resultados_df[order(resultados_df$Producto), ]
+  
+  return(resultados_df)
+}
+
+aa = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes)
+print(aa)
+```
+
+
