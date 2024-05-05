@@ -694,3 +694,24 @@ TablaComparacion <- data.frame(
 TablaComparacion <- head(TablaComparacion, 2)
 kable(TablaComparacion)
 ```
+
+
+# Ejemplos Predicción
+## Caracteristicas
+```{r}
+hora <- "10" 
+ruta <- "AB AK" 
+pasajeros = 240
+capacity = 280
+mes = "oct"
+dia_sem = 5
+Dmes = 17
+Dfmin = 160
+```
+
+
+```{r}
+v01 = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin)
+print(v01)
+```
+

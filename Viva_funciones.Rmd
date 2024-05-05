@@ -68,15 +68,6 @@ vtpr <- function(producto, ruta) {
 ```
 
 # Predicción
-```{r}
-hora <- "10" 
-ruta <- "AB AK" 
-pasajeros = 240
-capacity = 280
-mes = "oct"
-dia_sem = 5
-Dmes = 17
-```
 
 ```{r}
 aeropasajeros <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
@@ -86,7 +77,7 @@ aeropasajeros <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
 ```
 
 ```{r}
-aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
+aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin) {
   resultados_df <- data.frame()
   
   for (i in 1:nrow(mdm_productos)) {
@@ -138,11 +129,15 @@ aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
     ventas_totales_producto_hora = totales_hora,
     ventas_promedio_producto_hora = promedio_hora,
     ventas_totales_producto_ruta = totales_ruta,
-    ventas_promedio_producto_ruta = promedio_ruta
+    ventas_promedio_producto_ruta = promedio_ruta,
+    diferencia_minutos = Dfmin
     )
+    #newdata <- sapply(newdata, as.numeric)
+    #matriz_datos <- xgb.DMatrix(data = as.matrix(newdata), missing = NA)
 
     # Hacer la predicción
-    prediccion <- predict(model_ols, newdata) 
+    prediccion <- predict(model_ols, newdata)
+    #prediccion <- predict(xgb_model, matriz_datos) 
     
     resultados_list =list(c(producto, prediccion))
     temp_df <- as.data.frame(t(unlist(resultados_list)))
@@ -161,7 +156,7 @@ aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
   return(resultados_df)
 }
 
-aa = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes)
+aa = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin)
 print(aa)
 ```
 
