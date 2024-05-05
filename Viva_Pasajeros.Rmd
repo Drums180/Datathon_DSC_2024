@@ -57,6 +57,14 @@ library(car)
 library(Metrics)
 library(randomForest)
 library(xgboost)
+library(vip)
+library(neuralnet)
+```
+
+## Databases
+```{r}
+vuelos_alt = read.csv("databases/Vuelos_Alt.csv")
+vuelos_predict = read.csv("databases/Vuelos_2024.csv")
 ```
 
 # Preparación de datos
@@ -64,9 +72,24 @@ library(xgboost)
 vuelos_alt$ruta <- as.factor(vuelos_alt$ruta)
 
 vuelos_alt <- vuelos_alt %>%
-  mutate(
-    STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora))
-  )
+  filter(Passengers != 10)
+```
+
+# Creación de Columnas
+```{r}
+personas_capacidad <- vuelos_alt %>%
+  group_by(Capacity) %>%
+  summarise(capacidad_total_personas = sum(Passengers),
+            capacidad_promedio_personas = mean(Passengers))
+
+vuelos_alt <- left_join(vuelos_alt, personas_capacidad, by=c("Capacity"))
+
+destino_capacidad <- vuelos_alt %>%
+  group_by(Destination_Type) %>%
+  summarise(capacidad_total_destino = sum(Capacity),
+            capacidad_promedio_destino = mean(Capacity))
+
+vuelos_alt <- left_join(vuelos_alt, destino_capacidad, by=c("Destination_Type"))
 ```
 
 ## Cross-Validation
@@ -90,7 +113,7 @@ RMSE_ols_model
 
 ## OLS2
 ```{r}
-ols_model2 <- lm(Passengers ~ ruta + STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana, data = V_train)
+ols_model2 <- lm(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana, data = V_train)
 summary(ols_model2)
 
 pred_ols_model2 <- predict(ols_model2, newdata = V_test)
@@ -106,7 +129,7 @@ bptest(ols_model)
 ## Random Forest
 ```{r}
 # Ajustar el modelo de Random Forest
-modelo_rf <- randomForest(Passengers ~ Destination_Type + STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_Dia_del_mes + STD_DiaSemana,
+modelo_rf <- randomForest(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana,
   data = V_train,
   ntree = 50, # Número de árboles en el bosque
   mtry = sqrt(ncol(V_train) - 1), # Número de variables en cada división
@@ -118,34 +141,151 @@ RMSE_rf <- rmse(V_train$Passengers, pred_rf)
 RMSE_rf
 ```
 
-## XGBoost
-
+## OLS3
 ```{r}
-# Convertir la variable categórica Destination_Type en un factor
-V_train$Destination_Type <- as.factor(V_train$Destination_Type)
-V_test$Destination_Type <- as.factor(V_test$Destination_Type)
+ols_model3 <- lm(Passengers ~ DepartureStation + STD_hora + diferencia_horas + Destination_Type + log(Capacity) + STD_Mes + Bookings + STD_Dia_del_mes, data = V_train)
+summary(ols_model3)
 
-# Ajustar el modelo XGBoost
-modelo_xgb <- xgboost(
-  data = as.matrix(V_train[, -which(names(V_train) %in% c("STD_fecha"))]),
-  label = V_train$Passengers,
-  nrounds = 100, # Número de iteraciones
-  objective = "reg:squarederror", # Objetivo de regresión
-  eta = 0.3, # Tasa de aprendizaje
-  max_depth = 6, # Profundidad máxima del árbol
-  colsample_bytree = 0.8, # Submuestreo de columnas por árbol
-  subsample = 0.8
-) # Submuestreo de filas por árbol
+pred_ols_model3 <- predict(ols_model3, newdata = V_test)
+RMSE_ols_model3 <- rmse(V_train$Passengers, pred_ols_model3)
+RMSE_ols_model3
+```
 
-# Realizar predicciones con el modelo XGBoost
-pred_xgb <- predict(modelo_xgb, as.matrix(V_test[, -which(names(V_test) %in% c("STD_fecha"))]))
+## CART Regressivo
+```{r}
+# Entrenar el modelo CART
+cart_model <- rpart(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana, data = V_train)
 
-# Calcular el error RMSE
-RMSE_xgb <- sqrt(mean((pred_xgb - V_test$Passengers)^2))
+# Analizar la importancia de las variables
+vip(cart_model)
 
-RMSE_xgb
+# Trazar el árbol de decisión
+rpart.plot(cart_model, type = 4, extra = 101)
+
+# Realizar predicciones en el conjunto de prueba
+pred_cart <- predict(cart_model, newdata = V_test)
+
+# Calcular RMSE para el modelo CART
+RMSE_cart <- rmse(V_test$Passengers, pred_cart)
+RMSE_cart
+```
+
+## Neural Network Model
+```{r}
+# Asegurarse de que todas las columnas utilizadas sean numéricas
+numeric_vars <- c("STD_hora", "diferencia_horas", "STD_Mes", "Capacity", "Porcentaje_Reservas", "STD_DiaSemana", "Passengers")
+
+V_train_nn <- V_train
+V_test_nn <- V_test
+
+V_train_nn[numeric_vars] <- sapply(V_train[numeric_vars], function(x) as.numeric(as.character(x)))
+V_test_nn[numeric_vars] <- sapply(V_test[numeric_vars], function(x) as.numeric(as.character(x)))
+
+# Entrenar el modelo de red neuronal
+nn_model <- neuralnet(Passengers ~ STD_hora + diferencia_horas + Capacity + Porcentaje_Reservas + STD_DiaSemana,
+                      data = V_train_nn,
+                      hidden = c(5),  # Ajusta este valor según sea necesario
+                      linear.output = TRUE,  # Capa de salida lineal para regresión
+                      threshold = 0.01)  # Umbral para la convergencia del entrenamiento
+
+# Realizar predicciones en el conjunto de prueba
+pred_nn <- compute(nn_model, V_test_nn[numeric_vars])
+pred_nn <- pred_nn$net.result
+
+# Calcular RMSE para el modelo de red neuronal
+RMSE_nn <- sqrt(mean((pred_nn - V_test_nn$Passengers)^2))
+print(RMSE_nn)
+```
+
+## SVM Model
+```{r}
+# Entrenar el modelo SVM con la muestra reducida
+svm_model <- svm(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + STD_DiaSemana, data = V_train, kernel = "radial")
+
+# Realizar predicciones en el conjunto de prueba
+pred_svm <- predict(svm_model, newdata = V_test)
+
+# Calcular RMSE para el modelo SVM
+RMSE_svm <- sqrt(mean((pred_svm - V_test$Passengers)^2))
+RMSE_svm
 ```
 
 
+## XGBoost Model
+```{r}
+# Crear un vector con los nombres completos de los meses en orden
+months <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+# Convertir la columna de meses en V_train y V_test
+V_train$STD_Mes <- match(V_train$STD_Mes, months)
+V_test$STD_Mes <- match(V_test$STD_Mes, months)
+
+# Lista de variables a incluir en el modelo
+numeric_vars <- c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STA_Dia_del_mes")
+
+# Preparar los datos para XGBoost
+dtrain <- xgb.DMatrix(data = as.matrix(V_train[numeric_vars]), label = V_train$Passengers)
+dtest <- xgb.DMatrix(data = as.matrix(V_test[numeric_vars]), label = V_test$Passengers)
+
+# Parámetros para XGBoost
+params <- list(
+  booster = "gbtree",
+  objective = "reg:squarederror",
+  eta = 0.3,
+  gamma = 0,
+  max_depth = 6,
+  min_child_weight = 1,
+  subsample = 1,
+  colsample_bytree = 1
+)
+
+# Entrenamiento del modelo
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 500,  # Número de rondas de boosting
+  watchlist = list(eval = dtrain, test = dtest),
+  print_every_n = 100,
+  early_stopping_rounds = 10,
+  maximize = FALSE
+)
+
+# Realizar predicciones
+pred_xgb <- predict(xgb_model, dtest)
+
+# Calcular RMSE
+RMSE_xgb <- sqrt(mean((pred_xgb - V_test$Passengers)^2))
+print(RMSE_xgb)
+```
+
+## Prediccion
+```{r}
+# Left join con personas_capacidad
+vuelos_predict <- left_join(vuelos_predict, personas_capacidad, by = "Capacity")
+
+# Left join con destino_capacidad
+vuelos_predict <- left_join(vuelos_predict, destino_capacidad, by = "Destination_Type")
+
+vuelos_predict$STD_Mes <- match(vuelos_predict$STD_Mes, months)  # Asegurarse de que los meses estén en el mismo formato que se utilizó para el modelo
+
+# Crear la matriz de datos para XGBoost
+d_predict <- xgb.DMatrix(data = as.matrix(vuelos_predict[c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STA_Dia_del_mes")]))
+
+# Realizar predicciones para vuelos_predict
+pred_xgb_vuelos_predict <- predict(xgb_model, d_predict)
+
+# Redondear las predicciones sin decimales
+pred_xgb_vuelos_predict <- round(pred_xgb_vuelos_predict)
+
+# Asignar predicciones al dataframe original
+vuelos_predict$Passengers <- pred_xgb_vuelos_predict
+
+# Exportar el dataframe con las predicciones a un archivo CSV
+dir.create("forecast", showWarnings = FALSE)  # Crear la carpeta "forecast" si no existe
+write.csv(vuelos_predict, file = "forecast/Vuelos_Prediction.csv", row.names = FALSE)
+
+# Mensaje de confirmación
+cat("Predicciones exportadas exitosamente a 'forecast/Vuelos_Prediction.csv'.\n")
+```
 
 
