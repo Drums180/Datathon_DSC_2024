@@ -1,49 +1,151 @@
 ---
-title: "VivAerobus Modelo Pasajeros"
-author: "Omega Datalords"
-date: "2024-05-04"
-output: html_document
+title: "Viva_Personas"
+author: "Omega"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: journal
+    highlight: pygments
+    css: estilos.css
 ---
 
-# Modelo de Pasajeros
-
-## Database
-```{r}
-# Seleccionar y preparar los datos
-vuelos_alt <- df_alt %>%
-  dplyr::select(Flight_ID, Destination_Type, Origin_Type, Capacity, Bookings, 
-                STD_hora, STA_hora, diferencia_horas, diferencia_minutos, 
-                STD_Dia_del_mes, STA_Dia_del_mes, STA_Mes, STD_Mes, 
-                STA_Año, STD_Año, Porcentaje_Reservas, ruta) %>%
-  group_by(Flight_ID) %>%
-  summarise(across(everything(), mean, na.rm = TRUE))  # Añadiendo na.rm = TRUE para manejar NA
-
-# Revisar el dataframe resultante
-head(vuelos_alt)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warnings = FALSE, message = FALSE)
 ```
 
-## Modelo de Regresión Multiple 
-
+# Librerias 
 ```{r}
-# Convertir las variables horarias de hh:mm:ss a minutos desde medianoche
-vuelos <- vuelos %>%
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(lubridate)
+library(purrr)
+library(plotly)
+library(forecast)
+library(readxl)
+library(DataExplorer)
+library(dplyr)
+library(ggplot2)
+library(tm)
+library(wordcloud)
+library(cluster)
+library(factoextra)
+library(gridExtra)
+library(purrr)
+library(pROC)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+library(ggpubr)
+library(dlookr)
+library(zoo)
+library(caret)
+library(stats)
+library(tseries)
+library(readr)
+library(vars)
+library(syuzhet)
+library(kableExtra)
+library(plotly)
+library(scales)
+library(readxl)
+library(car)
+library(Metrics)
+library(randomForest)
+library(xgboost)
+```
+
+# Preparación de datos
+```{r}
+vuelos_alt$ruta <- as.factor(vuelos_alt$ruta)
+
+vuelos_alt <- vuelos_alt %>%
   mutate(
-    STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora)),
-    STA_hora = hour(hms(STA_hora)) * 60 + minute(hms(STA_hora))
+    STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora))
   )
 ```
 
+## Cross-Validation
+```{r}
+set.seed(123)
+partition <- createDataPartition(y = vuelos_alt$Passengers, p = 0.8, list = F)
+V_train <- vuelos_alt[partition, ]
+V_test <- vuelos_alt[-partition, ]
+```
+
+#Modelos
+## OLS1
+```{r}
+ols_model <- lm(Passengers ~ Destination_Type + DepartureStation + STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana + STD_Dia_del_mes, data = V_train)
+summary(ols_model)
+
+pred_ols_model <- predict(ols_model, newdata = V_test)
+RMSE_ols_model <- rmse(V_train$Passengers, pred_ols_model)
+RMSE_ols_model
+```
+
+## OLS2
+```{r}
+ols_model2 <- lm(Passengers ~ ruta + STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana, data = V_train)
+summary(ols_model2)
+
+pred_ols_model2 <- predict(ols_model2, newdata = V_test)
+RMSE_ols_model2 <- rmse(V_train$Passengers, pred_ols_model2)
+RMSE_ols_model2
+```
 
 ```{r}
-# Modelo de regresión múltiple
-modelo_pasajeros <- lm(Passengers ~ Destination_Type + Origin_Type + Capacity + Bookings + 
-                        STD_hora + STA_hora + diferencia_horas + diferencia_minutos + 
-                        STD_Dia_del_mes + STA_Dia_del_mes + STA_Mes + STD_Mes + 
-                        STA_Año + STD_Año + Porcentaje_Reservas + ruta, 
-                        data = vuelos)
-
-# Resumen del modelo
-summary(modelo_pasajeros)
+vif(ols_model)
+bptest(ols_model)
 ```
+
+## Random Forest
+```{r}
+# Ajustar el modelo de Random Forest
+modelo_rf <- randomForest(Passengers ~ Destination_Type + STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_Dia_del_mes + STD_DiaSemana,
+  data = V_train,
+  ntree = 50, # Número de árboles en el bosque
+  mtry = sqrt(ncol(V_train) - 1), # Número de variables en cada división
+  importance = TRUE
+) # Calcular la importancia de las variables
+
+pred_rf <- predict(modelo_rf, newdata = V_test)
+RMSE_rf <- rmse(V_train$Passengers, pred_rf)
+RMSE_rf
+```
+
+## XGBoost
+
+```{r}
+# Convertir la variable categórica Destination_Type en un factor
+V_train$Destination_Type <- as.factor(V_train$Destination_Type)
+V_test$Destination_Type <- as.factor(V_test$Destination_Type)
+
+# Ajustar el modelo XGBoost
+modelo_xgb <- xgboost(
+  data = as.matrix(V_train[, -which(names(V_train) %in% c("STD_fecha"))]),
+  label = V_train$Passengers,
+  nrounds = 100, # Número de iteraciones
+  objective = "reg:squarederror", # Objetivo de regresión
+  eta = 0.3, # Tasa de aprendizaje
+  max_depth = 6, # Profundidad máxima del árbol
+  colsample_bytree = 0.8, # Submuestreo de columnas por árbol
+  subsample = 0.8
+) # Submuestreo de filas por árbol
+
+# Realizar predicciones con el modelo XGBoost
+pred_xgb <- predict(modelo_xgb, as.matrix(V_test[, -which(names(V_test) %in% c("STD_fecha"))]))
+
+# Calcular el error RMSE
+RMSE_xgb <- sqrt(mean((pred_xgb - V_test$Passengers)^2))
+
+RMSE_xgb
+```
+
+
 
 
