@@ -1,16 +1,16 @@
 ---
-title: "Viva"
-author: "Datalords"
-date: "r Sys.Date()"
+title: "Reto - Viva Aerobus"
+author: "Omega Datalords"
+date: "05-05-2024"
 output:
   html_document:
     toc: yes
     toc_float: yes
-    theme: journal
+    theme: simplex
     highlight: pygments
-    css: estilos.css
 ---
 
+![](/Users/david3/Desktop/Datathon_DSC_2024/viva-aerobus.jpg)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -69,22 +69,23 @@ ventas = read.csv("databases/Sales Tec_Valid.csv")
 vuelos = read.csv("databases/Filghts Tec_Valid.csv")
 ```
 
-## Vuelos
+### Vuelos
 ```{r}
 #head(vuelos)
 #summary(vuelos)
 ```
 
 ### Tipo de dato
+Se reclasificaron las variables para su tipo de dato correcto
+
 ```{r}
 vuelos$Origin_Type = as.factor(vuelos$Origin_Type)
 vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
-#Ver si eliminar el registro ""
 ```
 
 ### Variables Dia/Fecha
 ```{r}
-### Salidas
+# Se le brindó el formato correcto de fecha y hora de las columnas que lo requieran para separarlas según su fecha y su hora específica
 vuelos$STD <- as.POSIXct(vuelos$STD, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STD_fecha <- as.Date(vuelos$STD)
 vuelos$STD_hora <- format(vuelos$STD, "%H:%M:%S")
@@ -97,10 +98,11 @@ vuelos$STA <- as.POSIXct(vuelos$STA, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STA_fecha <- as.Date(vuelos$STA)
 vuelos$STA_hora <- format(vuelos$STA, "%H:%M:%S")
 
-
+# Después se calculó la diferencia entre la hora de salida y hora de llegada para tener la duración de cada vuelo en horas y se multiplicó por 60 para tener ese mismo calculo en minutos
 vuelos$diferencia_horas <- as.numeric(difftime(vuelos$STA, vuelos$STD, units = "hours"))
 vuelos$diferencia_minutos <- vuelos$diferencia_horas * 60
 
+# A partir de la fecha individual, se segmentó esa variable según su día, mes y año
 vuelos$STD_Dia_del_mes <- day(vuelos$STD_fecha)
 vuelos$STD_Mes <- month(vuelos$STD_fecha, label = TRUE)
 vuelos$STD_Año <- year(vuelos$STD_fecha)
@@ -110,6 +112,7 @@ vuelos$STD_DiaSemana <- wday(vuelos$STD_fecha)
 
 ### Porcentajes
 ```{r}
+# Se realizó el calculo del porcentaje de capacidad de cada vuelo, que indica qué tan lleno iba cada avión y la porción de la capacidad que fue realizada a partir de una reservación
 vuelos$Passengers <- ifelse(vuelos$Passengers > vuelos$Capacity, vuelos$Capacity, vuelos$Passengers)
 
 vuelos <- vuelos %>%
@@ -118,6 +121,7 @@ vuelos <- vuelos %>%
 ```
 
 ```{r}
+# Aplicamos un filtro para remover los registros que no fueran del 2023 y quitar algunos registros que no contenían información pero que no eran clasificados como NA
 vuelos_alt <- vuelos %>%
   filter(STD_Año != 2024)%>%
   filter(diferencia_horas < 15)%>%
@@ -129,6 +133,7 @@ vuelos_alt <- vuelos %>%
 ```
 
 ```{r}
+# En una variable diferente, que será utilizada para realizar las predicciones, se filtró la base de datos original para incluir únicamente los registros de enero del 2024 que hayan durado menos de 15 horas para evitar sesgos aplicados por datos atípicos
 vuelos_predict <- vuelos %>%
   filter(STD_Año != 2023)%>%
   filter(STD_Mes == "Jan")%>%
@@ -139,6 +144,7 @@ vuelos_predict <- vuelos %>%
   filter(Destination_Type != "")%>%
   filter(STD_Año != 2025)
 
+# Pequeña correción en la hora para convertir la variable en un formato de 24 horas tomando en cuenta únicamente la hora de salida
 vuelos_predict <- vuelos_predict %>%
   mutate(
     STD_hora = hour(hms(STD_hora))
@@ -147,11 +153,13 @@ vuelos_predict <- vuelos_predict %>%
 
 
 ```{r}
+# Eliminamos la variable de la Aeronave porque no es significativa para los resultados de las predicciones del modelo
 vuelos_alt <- vuelos_alt %>%
   dplyr::select(-Aeronave)
 ```
 
 ```{r}
+# Unimos las variables del destino de origen y de salida para crear un indicador para cada ruta realizada por los aviones y, de nuevo, se identifica únicamente la hora de salida de cada vuelo
 vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
 
 vuelos_alt <- vuelos_alt %>%
@@ -161,7 +169,7 @@ vuelos_alt <- vuelos_alt %>%
 ```
 
 
-## Export Databases
+# Exportar bases de datos
 ```{r}
 # Exportar vuelos_alt a databases/Vuelos_Alt.csv
 write.csv(vuelos_alt, file = "databases/Vuelos_Alt.csv", row.names = FALSE)
@@ -172,8 +180,7 @@ write.csv(vuelos_predict, file = "databases/Vuelos_2024.csv", row.names = FALSE)
 
 ## Ventas 
 
-### Corrección ProductType
-#### Unicos para ProductType y ProductName
+### Correcciones
 ```{r}
 # Obtener valores únicos para las columnas ProductType y ProductName
 unicos_ProductType <- unique(ventas$ProductType)
@@ -192,7 +199,6 @@ valores_corregidos <- c("Botanas", "Licores", "Vivabus", "Transportaciones CUN",
 ventas$ProductType <- factor(ventas$ProductType, levels = unicos_ProductType, labels = valores_corregidos)
 ```
 
-### Corrección ProductName
 ```{r}
 # Crear un vector con los valores corregidos sin acentos
 valores_corregidos <- c("Carne Seca Habanero",
@@ -418,7 +424,7 @@ valores_corregidos <- c("Carne Seca Habanero",
                         "Taxi Huatulco Mazunte/Zipolite 3pax")
 ```
 
-### Columna Type (Servicio - Fisico)
+### Tipos de productos
 ```{r}
 # Definir una función para asignar el tipo según el tipo de producto
 asignar_tipo <- function(producto_tipo) {
@@ -438,7 +444,7 @@ ventas$Type <- sapply(ventas$ProductType, asignar_tipo)
 head(ventas)
 ```
 
-### Partición Type Fisico
+### Partición de los productos tangibles
 ```{r message=FALSE, warning=FALSE}
 # Función para asignar el subtipo según el tipo de producto
 asignar_subtipo <- function(producto_tipo, tipo) {
@@ -471,12 +477,14 @@ ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
 
 ### Join 
 ```{r}
+# Unimos ambas bases de datos según el ID de cada vuelo
 df <- vuelos_alt %>% 
   left_join(ventas, by = "Flight_ID")
 ```
 
 ## Correciones base
 ```{r}
+# Aplicamos los filtros de los tipos de productos de los que no nos interesa tener un inventario y eliminamos los registros que sean del 2024, tengan valores vacíos y formen parte de secciones extraordinarias del manú. Ej, Combos, Ofertas
 df_alt <- df %>%
   filter(Type != "Servicios") %>%
   filter(ProductType!= "Specials")%>%
@@ -491,11 +499,13 @@ df_alt <- df %>%
 ```
 
 ```{r}
+# Eliminamos las columnas que no serán de utilidad para el modelo
 df_alt <- df_alt %>%
-  dplyr::select(-Aeronave, -TotalSales, -Destination_Type, -Origin_Type, -STA_fecha, -STA_hora)
+  dplyr::select(-TotalSales, -Destination_Type, -Origin_Type, -STA_fecha, -STA_hora)
 ```
 
 ```{r}
+# Añadimos cuatro variables que describan el comportamiento de cada producto vendido según especificaciones de su hora y mes de acuerdo con las agrupaciones de registros similares a lo largo de todo el año
 hora_producto <- df_alt %>%
   group_by(STD_hora, ProductName) %>%
   summarise(ventas_totales_producto_hora = sum(Quantity),
@@ -512,6 +522,7 @@ df_alt <- left_join(df_alt, ruta_producto, by=c("ruta","ProductName"))
 ```
 
 ```{r}
+# Eliminamos las columnas que no serán de utilidad en el modelo y cambiamos el tipo de dato del identificador de ruta para que se mantenga como un factor
 df_alt <- df_alt %>%
   dplyr::select(-Flight_ID, -STD, -STA, -STD_fecha, -diferencia_horas, ProductType, -Type, -SubType, -DepartureStation, -ArrivalStation)
 
@@ -519,10 +530,12 @@ df_alt$ruta <- as.factor(df_alt$ruta)
 ```
 
 # Modelos
+
+### Partición de datos 
 ```{r}
 set.seed(123)
 
-# Paso 1: Dividir el conjunto de datos en entrenamiento (50%) y temporal (50%)
+# Dividir el conjunto de datos en entrenamiento (50%) y prueba (50%)
 trainIndex1 <- createDataPartition(y = df_alt$Quantity, p = 0.5, list = FALSE, times = 1)
 train <- df_alt[trainIndex1, ]
 test <- df_alt[-trainIndex1, ]
@@ -530,26 +543,49 @@ test <- df_alt[-trainIndex1, ]
 train$ProductName <- NULL
 ```
 
+## Regresión logística
+
 ```{r}
 model_ols <- lm(Quantity ~ STD_DiaSemana+Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta+ruta, data = train)
 summary(model_ols)
 
-# Hacer predicciones
+# Predicciones
 ols_predictions <- predict(model_ols, test)
 
 # RMSE
-# RMSE sin aplicar exp a las predicciones
 RMSE_ols <- rmse(ols_predictions, test$Quantity)
 RMSE_ols
 
 cbind(test, ols_predictions)
-```
 
-```{r}
 vif(model_ols)
 ```
 
+## Árbol de decisión
+
 ```{r}
+tree_model = rpart(Quantity ~ Passengers+Capacity+STD_Mes+STD_DiaSemana+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, data=train)
+
+# Predicciones
+tree_predictions <- predict(tree_model, test)
+
+# RMSE
+RMSE_tree <- rmse(tree_predictions, test$Quantity)
+RMSE_tree
+
+# MAPE
+MAPE_tree <- mape(tree_predictions, test$Quantity)
+MAPE_tree
+
+cbind(test, tree_predictions)
+```
+
+
+## Bosques Aleatorios
+
+** Cabe mencionar que lo ideal sería que el apartado de "ntree" contenga valores por encima de 300 para tener un modelo más robusto, ya que esto haría que el modelo genere cientos de árboles de decisión y elija el mejor. Sin embargo, por la cantidad de datos que contiene la base de datos, correr este chunk con esas especificaciones puede tomar incluso días generar el resultado con el poder de máquina con el que contamos actualmente. Le sugerimos fuertemente al cliente final replicar este modelo con un número de árboles mucho mayor para obtener mejores resultados. 
+
+``{r}
 rf_model <- randomForest(
   Quantity ~ Passengers+Capacity+STD_Mes+STD_DiaSemana+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, 
   data = train,
@@ -563,10 +599,112 @@ rf_model <- randomForest(
 )
 
 
-# Predicción – cv test data
+# Predicciones
 rf_prediction <- predict(rf_model,test)
 
 # RMSE
 RMSE_rf <- rmse(rf_prediction, test$Quantity)
 RMSE_rf
+
+MAPE_rf <- mape(rf_prediction, test$Quantity)
+MAPE_rf
+```
+
+
+## XGBoost
+### Preparación de Datos (matrices)
+``{r}
+xg_df_alt <- df_alt %>%
+  dplyr::select(Quantity, Passengers,Capacity,STD_Mes,STD_DiaSemana,ventas_totales_producto_hora,ventas_promedio_producto_hora,ventas_totales_producto_ruta,ventas_promedio_producto_ruta)
+
+set.seed(123)
+
+# Validación cruzada
+cv_data_alt  <- createDataPartition(y = xg_df_alt$Quantity, p=0.5, list=F, times=1)
+cv_train_alt = xg_df_alt[cv_data_alt, ]
+cv_test_alt = xg_df_alt[-cv_data_alt, ]
+
+
+# Espeficar previamente la variable dependiente en el set de train (ubicación en la primera columna indicada por el num 1)
+train_x = data.matrix(cv_train_alt[, -1])
+train_y = data.matrix(cv_train_alt[,1])
+
+# Espeficar previamente la variable dependiente en el set de test (ubicación en la primera columna indicada por el num 1)
+test_x = data.matrix(cv_test_alt[, -1])
+test_y = data.matrix(cv_test_alt[, 1])
+
+
+# Crear la matriz para los tests de train y test del modelo XGBoost
+xgb_train <- xgb.DMatrix(data = train_x, label = as.vector(train_y))
+xgb_test  = xgb.DMatrix(data = test_x, label = test_y)
+
+# Evaluar
+watchlist = list(train=xgb_train, test=xgb_test)
+
+```
+
+### Parameter Tunning
+
+### Modelo XGBoost con parámetros óptimos
+``{r}
+# Definir los parámetros óptimos obtenidos
+nrounds <- 100
+max_depth <- 5
+eta <- 0.1
+gamma <- 0
+colsample_bytree <- 0.8
+min_child_weight <- 1
+subsample <- 0.8
+
+# Entrenar el modelo
+xgb_model <- xgb.train(params = list(max_depth = max_depth, 
+                                     eta = eta, 
+                                     gamma = gamma, 
+                                     colsample_bytree = colsample_bytree, 
+                                     min_child_weight = min_child_weight, 
+                                     subsample = subsample), 
+                       data = xgb_train, 
+                       nrounds = nrounds, 
+                       objective = "reg:squarederror")
+
+
+# Predicción del modelo - cv test alt
+prediction_xgb_test<-predict(xgb_model, xgb_test)
+
+# RMSE
+RMSE_xgboost <- rmse(prediction_xgb_test,cv_test_alt$Quantity)
+RMSE_xgboost
+
+MAPE_xgboost <- mape(prediction_xgb_test,cv_test_alt$Quantity)
+MAPE_xgboost
+
+# Importancia de las variables explicativas de acuerdo al modelo
+importance_matrix <- xgb.importance(model = xgb_model)
+xgb.plot.importance(importance_matrix, xlab = "Explanatory Variables X's Importance")
+
+
+```
+
+# Comparación de modelos
+Los resultados finales de cada modelo representan el desempeño que tuvieron frente a los datos de prueba después de haber sido entrenados. De forma general, aprovechando los recursos visuales del siguiente código, el mejor modelo es aquel que tiene RMSE y MAPE más bajos
+
+``{r}
+metricas <- c("RMSE", "MAPE")
+ols_values <- c(RMSE_ols, MAPE_ols)
+rf_values <- c(RMSE_rf, MAPE_rf)
+tree_values <- c(RMSE_tree, MAPE_tree)
+XG_values <- c(RMSE_xgboost, MAPE_xgboost)
+
+
+# Crear el dataframe combinando los valores y las métricas
+TablaComparacion <- data.frame(
+  Metrica = rep(metricas, 2),  
+  Linear_regression = ols_values,
+  Decision_Tree = tree_values,
+  Random_Forest = rf_values,
+  XG_Boost = XG_values
+)
+
+TablaComparacion <- head(TablaComparacion, 2)
+kable(TablaComparacion)
 ```
