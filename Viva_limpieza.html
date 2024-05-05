@@ -1289,96 +1289,6 @@ window.buildTabsets = function(tocID) {
 };
 
 </script>
-<script>
-window.initializeCodeFolding = function(show) {
-
-  // handlers for show-all and hide all
-  $("#rmd-show-all-code").click(function() {
-    $('div.r-code-collapse').each(function() {
-      $(this).collapse('show');
-    });
-  });
-  $("#rmd-hide-all-code").click(function() {
-    $('div.r-code-collapse').each(function() {
-      $(this).collapse('hide');
-    });
-  });
-
-  // index for unique code element ids
-  var currentIndex = 1;
-
-  // select all R code blocks
-  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
-  rCodeBlocks.each(function() {
-    // skip if the block has fold-none class
-    if ($(this).hasClass('fold-none')) return;
-
-    // create a collapsable div to wrap the code in
-    var div = $('<div class="collapse r-code-collapse"></div>');
-    var showThis = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
-    var id = 'rcode-643E0F36' + currentIndex++;
-    div.attr('id', id);
-    $(this).before(div);
-    $(this).detach().appendTo(div);
-
-    // add a show code button right above
-    var showCodeText = $('<span>' + (showThis ? 'Hide' : 'Show') + '</span>');
-    var showCodeButton = $('<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm code-folding-btn pull-right float-right"></button>');
-    showCodeButton.append(showCodeText);
-    showCodeButton
-        .attr('data-toggle', 'collapse')
-        .attr('data-bs-toggle', 'collapse') // BS5
-        .attr('data-target', '#' + id)
-        .attr('data-bs-target', '#' + id)   // BS5
-        .attr('aria-expanded', showThis)
-        .attr('aria-controls', id);
-
-    var buttonRow = $('<div class="row"></div>');
-    var buttonCol = $('<div class="col-md-12"></div>');
-
-    buttonCol.append(showCodeButton);
-    buttonRow.append(buttonCol);
-
-    div.before(buttonRow);
-
-    // show the div if necessary
-    if (showThis) div.collapse('show');
-
-    // update state of button on show/hide
-    //   * Change text
-    //   * add a class for intermediate states styling
-    div.on('hide.bs.collapse', function () {
-      showCodeText.text('Show');
-      showCodeButton.addClass('btn-collapsing');
-    });
-    div.on('hidden.bs.collapse', function () {
-      showCodeButton.removeClass('btn-collapsing');
-    });
-    div.on('show.bs.collapse', function () {
-      showCodeText.text('Hide');
-      showCodeButton.addClass('btn-expanding');
-    });
-    div.on('shown.bs.collapse', function () {
-      showCodeButton.removeClass('btn-expanding');
-    });
-
-  });
-
-}
-</script>
-<script>
-window.initializeSourceEmbed = function(filename) {
-  $("#rmd-download-source").click(function() {
-    var src = $("#rmd-source-code").html();
-    var a = document.createElement('a');
-    a.href = "data:text/x-r-markdown;base64," + src;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  });
-};
-</script>
 
 <style type="text/css">
 code{white-space: pre-wrap;}
@@ -1494,11 +1404,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </script>
 
 
-<style type="text/css">
-#rmd-source-code {
-display: none;
-}
-</style>
 
 
 <style type="text/css">body {font-family: Arial, sans-serif; line-height: 1.6; }h1 {color: #3963d8; font-size: 2.5em; font-weight: bold; }h2 {color: #795ae9; font-size: 2em; font-weight: bold; }.title, .subtitle, .author, .date {text-align: center; margin-bottom: 20px; }p {text-align: justify; margin-bottom: 15px; }pre {background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }.tocify {background-color: #f4f4f4; border-radius: 5px; padding: 10px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }</style>
@@ -1580,9 +1485,6 @@ display: none;
 </style>
 
 <!-- code folding -->
-<style type="text/css">
-.code-folding-btn { margin-bottom: 4px; }
-</style>
 
 
 
@@ -1660,13 +1562,6 @@ border-radius: 0px;
 
 <div id="header">
 
-<div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
-<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
-<li><a id="rmd-download-source" href="#">Download Rmd</a></li>
-</ul>
-</div>
-
 
 
 <h1 class="title toc-ignore">Viva</h1>
@@ -1722,101 +1617,633 @@ border-radius: 0px;
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>vuelos <span class="ot">=</span> <span class="fu">read.csv</span>(<span class="st">&quot;databases/Filghts Tec_Valid.csv&quot;</span>)</span></code></pre></div>
 <div id="vuelos" class="section level2">
 <h2>Vuelos</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">head</span>(vuelos)</span></code></pre></div>
-<pre><code>##                          Flight_ID Aeronave DepartureStation ArrivalStation
-## 1 ab954014077430bd842cfa305a55c0f8   XA-VBY               AT             AZ
-## 2 efd86c996035dacdca7a0ccb2560dda1   XA-VIX               BM             AV
-## 3 6cfa1bbaa44f08fc7d3061f034a6a5ce   XA-VBV               AW             AS
-## 4 dd0fad3248951d2f71d63e6279aeaa4b   XA-VBW               AW             AS
-## 5 d0987ee648eea254063bfe2b39571b67   XA-VAP               BA             AB
-## 6 3b5df8805161ea827d2f2e4298c38e06   XA-VBY               AJ             AR
-##      Destination_Type         Origin_Type                 STD
-## 1   Ciudad Fronteriza    Ciudad Principal 2023-10-19 11:40:00
-## 2 MX Amigos y Familia   Ciudad Fronteriza 2023-07-03 00:55:00
-## 3 MX Amigos y Familia    Ciudad Principal 2024-02-16 17:10:00
-## 4 MX Amigos y Familia    Ciudad Principal 2023-06-26 15:15:00
-## 5               Playa    Ciudad Principal 2023-02-10 08:40:00
-## 6               Playa MX Amigos y Familia 2023-09-07 17:10:00
-##                   STA Capacity Passengers Bookings
-## 1 2023-10-19 14:25:00      240        229      157
-## 2 2023-07-03 04:55:00      186        197      109
-## 3 2024-02-16 17:55:00      220         NA       NA
-## 4 2023-06-26 15:55:00      220        200      142
-## 5 2023-02-10 09:50:00      186        162       90
-## 6 2023-09-07 18:05:00      240        183      125</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">summary</span>(vuelos)</span></code></pre></div>
-<pre><code>##   Flight_ID           Aeronave         DepartureStation   ArrivalStation    
-##  Length:245753      Length:245753      Length:245753      Length:245753     
-##  Class :character   Class :character   Class :character   Class :character  
-##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
-##                                                                             
-##                                                                             
-##                                                                             
-##                                                                             
-##  Destination_Type   Origin_Type            STD                STA           
-##  Length:245753      Length:245753      Length:245753      Length:245753     
-##  Class :character   Class :character   Class :character   Class :character  
-##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
-##                                                                             
-##                                                                             
-##                                                                             
-##                                                                             
-##     Capacity       Passengers        Bookings     
-##  Min.   :178.0   Min.   :  1.0    Min.   :  1.0   
-##  1st Qu.:186.0   1st Qu.:162.0    1st Qu.: 93.0   
-##  Median :186.0   Median :185.0    Median :112.0   
-##  Mean   :204.4   Mean   :183.7    Mean   :113.8   
-##  3rd Qu.:240.0   3rd Qu.:211.0    3rd Qu.:134.0   
-##  Max.   :240.0   Max.   :271.0    Max.   :219.0   
-##                  NA&#39;s   :123525   NA&#39;s   :123525</code></pre>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>vuelos<span class="sc">$</span>Origin_Type <span class="ot">=</span> <span class="fu">as.factor</span>(vuelos<span class="sc">$</span>Origin_Type)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>vuelos<span class="sc">$</span>Destination_Type <span class="ot">=</span> <span class="fu">as.factor</span>(vuelos<span class="sc">$</span>Destination_Type)</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#Ver si eliminar el registro &quot;&quot;</span></span></code></pre></div>
-<div id="cancelación-de-los-vuelos" class="section level3">
-<h3>Cancelación de los vuelos</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>vuelos<span class="sc">$</span>Realizado <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(vuelos<span class="sc">$</span>Passengers), <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>vuelos<span class="sc">$</span>Realizado <span class="ot">=</span> <span class="fu">as.factor</span>(vuelos<span class="sc">$</span>Realizado)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co">#head(vuelos)</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#summary(vuelos)</span></span></code></pre></div>
+<div id="tipo-de-dato" class="section level3">
+<h3>Tipo de dato</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>vuelos<span class="sc">$</span>Origin_Type <span class="ot">=</span> <span class="fu">as.factor</span>(vuelos<span class="sc">$</span>Origin_Type)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>vuelos<span class="sc">$</span>Destination_Type <span class="ot">=</span> <span class="fu">as.factor</span>(vuelos<span class="sc">$</span>Destination_Type)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#Ver si eliminar el registro &quot;&quot;</span></span></code></pre></div>
 </div>
 <div id="variables-diafecha" class="section level3">
 <h3>Variables Dia/Fecha</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="do">### Salidas</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>vuelos<span class="sc">$</span>STD <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vuelos<span class="sc">$</span>STD, <span class="at">format =</span> <span class="st">&quot;%Y-%m-%d %H:%M:%S&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_fecha <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(vuelos<span class="sc">$</span>STD)</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_hora <span class="ot">&lt;-</span> <span class="fu">format</span>(vuelos<span class="sc">$</span>STD, <span class="st">&quot;%H:%M:%S&quot;</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>vuelos<span class="sc">$</span>STA <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vuelos<span class="sc">$</span>STA, <span class="at">format =</span> <span class="st">&quot;%Y-%m-%d %H:%M:%S&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_fecha <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(vuelos<span class="sc">$</span>STA)</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_hora <span class="ot">&lt;-</span> <span class="fu">format</span>(vuelos<span class="sc">$</span>STA, <span class="st">&quot;%H:%M:%S&quot;</span>)</span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>vuelos<span class="sc">$</span>diferencia_horas <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(vuelos<span class="sc">$</span>STA, vuelos<span class="sc">$</span>STD, <span class="at">units =</span> <span class="st">&quot;hours&quot;</span>))</span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>vuelos<span class="sc">$</span>diferencia_minutos <span class="ot">&lt;-</span> vuelos<span class="sc">$</span>diferencia_horas <span class="sc">*</span> <span class="dv">60</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_Dia_del_mes <span class="ot">&lt;-</span> <span class="fu">day</span>(vuelos<span class="sc">$</span>STD_fecha)</span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_Mes <span class="ot">&lt;-</span> <span class="fu">month</span>(vuelos<span class="sc">$</span>STD_fecha, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_Año <span class="ot">&lt;-</span> <span class="fu">year</span>(vuelos<span class="sc">$</span>STD_fecha)</span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a></span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_Dia_del_mes <span class="ot">&lt;-</span> <span class="fu">day</span>(vuelos<span class="sc">$</span>STA_fecha)</span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_Mes <span class="ot">&lt;-</span> <span class="fu">month</span>(vuelos<span class="sc">$</span>STA_fecha, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_Año <span class="ot">&lt;-</span> <span class="fu">year</span>(vuelos<span class="sc">$</span>STA_fecha)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="do">### Salidas</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>vuelos<span class="sc">$</span>STD <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vuelos<span class="sc">$</span>STD, <span class="at">format =</span> <span class="st">&quot;%Y-%m-%d %H:%M:%S&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_fecha <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(vuelos<span class="sc">$</span>STD)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_hora <span class="ot">&lt;-</span> <span class="fu">format</span>(vuelos<span class="sc">$</span>STD, <span class="st">&quot;%H:%M:%S&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>vuelos<span class="sc">$</span>STA <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vuelos<span class="sc">$</span>STA, <span class="at">format =</span> <span class="st">&quot;%Y-%m-%d %H:%M:%S&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_fecha <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(vuelos<span class="sc">$</span>STA)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_hora <span class="ot">&lt;-</span> <span class="fu">format</span>(vuelos<span class="sc">$</span>STA, <span class="st">&quot;%H:%M:%S&quot;</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>vuelos<span class="sc">$</span>diferencia_horas <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(vuelos<span class="sc">$</span>STA, vuelos<span class="sc">$</span>STD, <span class="at">units =</span> <span class="st">&quot;hours&quot;</span>))</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>vuelos<span class="sc">$</span>diferencia_minutos <span class="ot">&lt;-</span> vuelos<span class="sc">$</span>diferencia_horas <span class="sc">*</span> <span class="dv">60</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_Dia_del_mes <span class="ot">&lt;-</span> <span class="fu">day</span>(vuelos<span class="sc">$</span>STD_fecha)</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_Mes <span class="ot">&lt;-</span> <span class="fu">month</span>(vuelos<span class="sc">$</span>STD_fecha, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>vuelos<span class="sc">$</span>STD_Año <span class="ot">&lt;-</span> <span class="fu">year</span>(vuelos<span class="sc">$</span>STD_fecha)</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_Dia_del_mes <span class="ot">&lt;-</span> <span class="fu">day</span>(vuelos<span class="sc">$</span>STA_fecha)</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_Mes <span class="ot">&lt;-</span> <span class="fu">month</span>(vuelos<span class="sc">$</span>STA_fecha, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>vuelos<span class="sc">$</span>STA_Año <span class="ot">&lt;-</span> <span class="fu">year</span>(vuelos<span class="sc">$</span>STA_fecha)</span></code></pre></div>
 </div>
 <div id="porcentajes" class="section level3">
 <h3>Porcentajes</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>vuelos <span class="ot">&lt;-</span> vuelos <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Porcentaje_Capacidad =</span> (Passengers <span class="sc">/</span> Capacity) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>         <span class="at">Porcentaje_Reservas =</span> (Bookings<span class="sc">/</span>Capacity)<span class="sc">*</span><span class="dv">100</span>)</span></code></pre></div>
-</div>
-<div id="join" class="section level3">
-<h3>Join</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>df <span class="ot">&lt;-</span> vuelos <span class="sc">%&gt;%</span> </span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="fu">left_join</span>(ventas, <span class="at">by =</span> <span class="st">&quot;Flight_ID&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>vuelos<span class="sc">$</span>Passengers <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(vuelos<span class="sc">$</span>Passengers <span class="sc">&gt;</span> vuelos<span class="sc">$</span>Capacity, vuelos<span class="sc">$</span>Capacity, vuelos<span class="sc">$</span>Passengers)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>vuelos <span class="ot">&lt;-</span> vuelos <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Porcentaje_Capacidad =</span> (Passengers <span class="sc">/</span> Capacity) <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>         <span class="at">Porcentaje_Reservas =</span> (Bookings<span class="sc">/</span>Capacity)<span class="sc">*</span><span class="dv">100</span>)</span></code></pre></div>
 </div>
 </div>
 <div id="ventas" class="section level2">
 <h2>Ventas</h2>
+<div id="corrección-producttype" class="section level3">
+<h3>Corrección ProductType</h3>
+<div id="unicos-para-producttype-y-productname" class="section level4">
+<h4>Unicos para ProductType y ProductName</h4>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Obtener valores únicos para las columnas ProductType y ProductName</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>unicos_ProductType <span class="ot">&lt;-</span> <span class="fu">unique</span>(ventas<span class="sc">$</span>ProductType)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>unicos_ProductName <span class="ot">&lt;-</span> <span class="fu">unique</span>(ventas<span class="sc">$</span>ProductName)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Crear un vector con los valores corregidos</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>valores_corregidos <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Botanas&quot;</span>, <span class="st">&quot;Licores&quot;</span>, <span class="st">&quot;Vivabus&quot;</span>, <span class="st">&quot;Transportaciones CUN&quot;</span>, <span class="st">&quot;Galletas&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                        <span class="st">&quot;Specials&quot;</span>, <span class="st">&quot;Bebidas Calientes&quot;</span>, <span class="st">&quot;Combos Crew&quot;</span>, <span class="st">&quot;Hertz&quot;</span>, <span class="st">&quot;Ofertas&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>                        <span class="st">&quot;Transportaciones MTY&quot;</span>, <span class="st">&quot;Transportaciones TLC&quot;</span>, <span class="st">&quot;Viva Play&quot;</span>, <span class="st">&quot;Viva Taxis&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>                        <span class="st">&quot;Antros&quot;</span>, <span class="st">&quot;Viva Transfer&quot;</span>, <span class="st">&quot;Alimentos Charter&quot;</span>, <span class="st">&quot;Perecederos&quot;</span>, <span class="st">&quot;Refrescos&quot;</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>                        <span class="st">&quot;Sopas&quot;</span>, <span class="st">&quot;Lacteos&quot;</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co"># Reemplazar los valores en el conjunto de datos</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>ventas<span class="sc">$</span>ProductType <span class="ot">&lt;-</span> <span class="fu">factor</span>(ventas<span class="sc">$</span>ProductType, <span class="at">levels =</span> unicos_ProductType, <span class="at">labels =</span> valores_corregidos)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co"># Verificar que los valores se hayan reemplazado correctamente</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Valores únicos corregidos para ProductType:&quot;</span>)</span></code></pre></div>
+<pre><code>## [1] &quot;Valores únicos corregidos para ProductType:&quot;</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">unique</span>(ventas<span class="sc">$</span>ProductType))</span></code></pre></div>
+<pre><code>##  [1] Botanas              Licores              Vivabus             
+##  [4] Transportaciones CUN Galletas             Specials            
+##  [7] Bebidas Calientes    Combos Crew          Hertz               
+## [10] Ofertas              Transportaciones MTY Transportaciones TLC
+## [13] Viva Play            Viva Taxis           Antros              
+## [16] Viva Transfer        Alimentos Charter    Perecederos         
+## [19] Refrescos            Sopas                Lacteos             
+## 21 Levels: Botanas Licores Vivabus Transportaciones CUN Galletas ... Lacteos</code></pre>
+</div>
+</div>
+<div id="corrección-productname" class="section level3">
+<h3>Corrección ProductName</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Crear un vector con los valores corregidos sin acentos</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>valores_corregidos <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Carne Seca Habanero&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>                        <span class="st">&quot;Jw Red Label&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>                        <span class="st">&quot;Jack And Coke&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>                        <span class="st">&quot;Jw Red Label&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>                        <span class="st">&quot;Vivabus Gdl.-Nvo. C. Camionera&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>                        <span class="st">&quot;Ron Bacardi&quot;</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>                        <span class="st">&quot;Baileys&quot;</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>                        <span class="st">&quot;Corajillo&quot;</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>                        <span class="st">&quot;Transfer Cun: Zona Hotelera Sencillo&quot;</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>                        <span class="st">&quot;Muffin Integral&quot;</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>                        <span class="st">&quot;Tequila 7 Leguas Reposado&quot;</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>                        <span class="st">&quot;Arandano Mango Mix&quot;</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>                        <span class="st">&quot;Quaker Granola&quot;</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>                        <span class="st">&quot;Tequila 7 Leguas Blanco&quot;</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>                        <span class="st">&quot;Combo Cheve + Carne&quot;</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>                        <span class="st">&quot;Sol Clamato&quot;</span>,</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>                        <span class="st">&quot;Tequila + Mezclador&quot;</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>                        <span class="st">&quot;Quaker Avena Frutos Rojos&quot;</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>                        <span class="st">&quot;Go Nuts&quot;</span>,</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>                        <span class="st">&quot;Arandano&quot;</span>,</span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>                        <span class="st">&quot;Combo Vino&quot;</span>,</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a>                        <span class="st">&quot;Tinto&quot;</span>,</span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a>                        <span class="st">&quot;Nutty Berry Mix&quot;</span>,</span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a>                        <span class="st">&quot;Promo Amstel&quot;</span>,</span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a>                        <span class="st">&quot;Frutos Secos Enchilados&quot;</span>,</span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>                        <span class="st">&quot;Vivabus Cancun: Playa Del Carmen (Sencillo)&quot;</span>,</span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>                        <span class="st">&quot;Te Relax&quot;</span>,</span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>                        <span class="st">&quot;Dip De Queso&quot;</span>,</span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>                        <span class="st">&quot;Crea Combo Crew 1&quot;</span>,</span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>                        <span class="st">&quot;Te Frutos Rojos&quot;</span>,</span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>                        <span class="st">&quot;Ultra Seltzer Frambuesa&quot;</span>,</span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>                        <span class="st">&quot;Corajillo Baileys&quot;</span>,</span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a>                        <span class="st">&quot;Vivabus Monterrey: Central&quot;</span>,</span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a>                        <span class="st">&quot;Vino Tinto Cria Cuervos&quot;</span>,</span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a>                        <span class="st">&quot;Cat.C.Com&quot;</span>,</span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a>                        <span class="st">&quot;Capitan Morning Con Pan Dulce&quot;</span>,</span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a>                        <span class="st">&quot;Te Manzanilla Jengibre&quot;</span>,</span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun-Centro/Hoteles/Pto Juarez 1 A 6 Redondo&quot;</span>,</span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a>                        <span class="st">&quot;Baileys&quot;</span>,</span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a>                        <span class="st">&quot;Vivabus:Shuttle Apto.-Centro Tul.(Sencillo)&quot;</span>,</span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a>                        <span class="st">&quot;Nueces De Arbol Mix&quot;</span>,</span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a>                        <span class="st">&quot;Carne Seca Original&quot;</span>,</span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a>                        <span class="st">&quot;Luxury Nut Mix&quot;</span>,</span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a>                        <span class="st">&quot;Combo Cheve Doble&quot;</span>,</span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a>                        <span class="st">&quot;Botana Sabritas Con Dip De Queso&quot;</span>,</span>
+<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a>                        <span class="st">&quot;Galleta De Chispas De Chocolate&quot;</span>,</span>
+<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a>                        <span class="st">&quot;Vivabus Monterrey: Fierro (Y Griega)&quot;</span>,</span>
+<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a>                        <span class="st">&quot;Tostitos Nachos Con Dip&quot;</span>,</span>
+<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a>                        <span class="st">&quot;Promo Hsbc 1 Bebida Gratis&quot;</span>,</span>
+<span id="cb12-51"><a href="#cb12-51" tabindex="-1"></a>                        <span class="st">&quot;Protein Adventure&quot;</span>,</span>
+<span id="cb12-52"><a href="#cb12-52" tabindex="-1"></a>                        <span class="st">&quot;Crea Combo Crew 3&quot;</span>,</span>
+<span id="cb12-53"><a href="#cb12-53" tabindex="-1"></a>                        <span class="st">&quot;Vino Blanco Cria Cuervos&quot;</span>,</span>
+<span id="cb12-54"><a href="#cb12-54" tabindex="-1"></a>                        <span class="st">&quot;Hsbc-Viva&quot;</span>,</span>
+<span id="cb12-55"><a href="#cb12-55" tabindex="-1"></a>                        <span class="st">&quot;Galleta De Chocolate&quot;</span>,</span>
+<span id="cb12-56"><a href="#cb12-56" tabindex="-1"></a>                        <span class="st">&quot;Topochico Seltzer Fresa-Guayaba&quot;</span>,</span>
+<span id="cb12-57"><a href="#cb12-57" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun-Centro/Hoteles/Pto Juarez 7 A 12 Redondo&quot;</span>,</span>
+<span id="cb12-58"><a href="#cb12-58" tabindex="-1"></a>                        <span class="st">&quot;Te Vainilla&quot;</span>,</span>
+<span id="cb12-59"><a href="#cb12-59" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun-Centro/Hoteles/Pto Juarez 1 A 6 Sencillo&quot;</span>,</span>
+<span id="cb12-60"><a href="#cb12-60" tabindex="-1"></a>                        <span class="st">&quot;Zona-5 Sanpedro 4pax&quot;</span>,</span>
+<span id="cb12-61"><a href="#cb12-61" tabindex="-1"></a>                        <span class="st">&quot;Tulum Redondo 6 Pax&quot;</span>,</span>
+<span id="cb12-62"><a href="#cb12-62" tabindex="-1"></a>                        <span class="st">&quot;Combo Snack + Hsbc-Viva&quot;</span>,</span>
+<span id="cb12-63"><a href="#cb12-63" tabindex="-1"></a>                        <span class="st">&quot;Transfer Tlc: Aeropuerto A Observatorio&quot;</span>,</span>
+<span id="cb12-64"><a href="#cb12-64" tabindex="-1"></a>                        <span class="st">&quot;Cafe De Olla&quot;</span>,</span>
+<span id="cb12-65"><a href="#cb12-65" tabindex="-1"></a>                        <span class="st">&quot;Zona-3 Centro Mty 4pax&quot;</span>,</span>
+<span id="cb12-66"><a href="#cb12-66" tabindex="-1"></a>                        <span class="st">&quot;Cat.L.&quot;</span>,</span>
+<span id="cb12-67"><a href="#cb12-67" tabindex="-1"></a>                        <span class="st">&quot;Vivaplay&quot;</span>,</span>
+<span id="cb12-68"><a href="#cb12-68" tabindex="-1"></a>                        <span class="st">&quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres-Priv-Sencillo&quot;</span>,</span>
+<span id="cb12-69"><a href="#cb12-69" tabindex="-1"></a>                        <span class="st">&quot;Galleta De Arandano Relleno De Q/Crema&quot;</span>,</span>
+<span id="cb12-70"><a href="#cb12-70" tabindex="-1"></a>                        <span class="st">&quot;Vivabus Cancun: Playa Del Carmen (Redondo)&quot;</span>,</span>
+<span id="cb12-71"><a href="#cb12-71" tabindex="-1"></a>                        <span class="st">&quot;Salsa Botanera&quot;</span>,</span>
+<span id="cb12-72"><a href="#cb12-72" tabindex="-1"></a>                        <span class="st">&quot;Cat.A.Subc&quot;</span>,</span>
+<span id="cb12-73"><a href="#cb12-73" tabindex="-1"></a>                        <span class="st">&quot;Cat.D.Sdn&quot;</span>,</span>
+<span id="cb12-74"><a href="#cb12-74" tabindex="-1"></a>                        <span class="st">&quot;Coco Bongo Playa&quot;</span>,</span>
+<span id="cb12-75"><a href="#cb12-75" tabindex="-1"></a>                        <span class="st">&quot;Zona-4 Tec-Mty 4pax&quot;</span>,</span>
+<span id="cb12-76"><a href="#cb12-76" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx - Santa Fe&quot;</span>,</span>
+<span id="cb12-77"><a href="#cb12-77" tabindex="-1"></a>                        <span class="st">&quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres Priv-Redondo 6&quot;</span>,</span>
+<span id="cb12-78"><a href="#cb12-78" tabindex="-1"></a>                        <span class="st">&quot;Aifa A Central Taxquena&quot;</span>,</span>
+<span id="cb12-79"><a href="#cb12-79" tabindex="-1"></a>                        <span class="st">&quot;Zona-2 San Nicolas 4pax&quot;</span>,</span>
+<span id="cb12-80"><a href="#cb12-80" tabindex="-1"></a>                        <span class="st">&quot;Transfer Leon: Central.Puerta Milenio Mega Centro.Poliforum&quot;</span>,</span>
+<span id="cb12-81"><a href="#cb12-81" tabindex="-1"></a>                        <span class="st">&quot;Hsbc Promo 1c&quot;</span>,</span>
+<span id="cb12-82"><a href="#cb12-82" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun Puerto-Morelos-Sencillo 1 A 6  Paxs&quot;</span>,</span>
+<span id="cb12-83"><a href="#cb12-83" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun Puerto-Morelos-Sencillo 7 A 12&quot;</span>,</span>
+<span id="cb12-84"><a href="#cb12-84" tabindex="-1"></a>                        <span class="st">&quot;Cafe 19 Cafe Clasico&quot;</span>,</span>
+<span id="cb12-85"><a href="#cb12-85" tabindex="-1"></a>                        <span class="st">&quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujerespriv-Sencillo 1&quot;</span>,</span>
+<span id="cb12-86"><a href="#cb12-86" tabindex="-1"></a>                        <span class="st">&quot;Zona-1 Apodaca 4pax&quot;</span>,</span>
+<span id="cb12-87"><a href="#cb12-87" tabindex="-1"></a>                        <span class="st">&quot;Apto.Gdl.-Terminal Zapopan&quot;</span>,</span>
+<span id="cb12-88"><a href="#cb12-88" tabindex="-1"></a>                        <span class="st">&quot;Guanajuato :Bjx A Central De Autobuses&quot;</span>,</span>
+<span id="cb12-89"><a href="#cb12-89" tabindex="-1"></a>                        <span class="st">&quot;Coco Bongo Cancun Apartado&quot;</span>,</span>
+<span id="cb12-90"><a href="#cb12-90" tabindex="-1"></a>                        <span class="st">&quot;Crea Combo Crew 2&quot;</span>,</span>
+<span id="cb12-91"><a href="#cb12-91" tabindex="-1"></a>                        <span class="st">&quot;Coco Bongo Full Pack&quot;</span>,</span>
+<span id="cb12-92"><a href="#cb12-92" tabindex="-1"></a>                        <span class="st">&quot;Aifa  A Central Del Norte&quot;</span>,</span>
+<span id="cb12-93"><a href="#cb12-93" tabindex="-1"></a>                        <span class="st">&quot;Transfer Tlc: Tollocan A Aicm&quot;</span>,</span>
+<span id="cb12-94"><a href="#cb12-94" tabindex="-1"></a>                        <span class="st">&quot;Tulum Sencillo 6 Pax&quot;</span>,</span>
+<span id="cb12-95"><a href="#cb12-95" tabindex="-1"></a>                        <span class="st">&quot;Zona-2 San Nicolas 10pax&quot;</span>,</span>
+<span id="cb12-96"><a href="#cb12-96" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun Puerto-Morelos-Redondo7 A 12&quot;</span>,</span>
+<span id="cb12-97"><a href="#cb12-97" tabindex="-1"></a>                        <span class="st">&quot;Combo Cheve + Hsbc-Viva&quot;</span>,</span>
+<span id="cb12-98"><a href="#cb12-98" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun-Centro/Hoteles/Pto Juarez 12paxs Sencillo&quot;</span>,</span>
+<span id="cb12-99"><a href="#cb12-99" tabindex="-1"></a>                        <span class="st">&quot;Charter Cheve Doble&quot;</span>,</span>
+<span id="cb12-100"><a href="#cb12-100" tabindex="-1"></a>                        <span class="st">&quot;Taxi Tlc: Centro&quot;</span>,</span>
+<span id="cb12-101"><a href="#cb12-101" tabindex="-1"></a>                        <span class="st">&quot;Cancun Plaza Las Americas Sencillo&quot;</span>,</span>
+<span id="cb12-102"><a href="#cb12-102" tabindex="-1"></a>                        <span class="st">&quot;Tulum Redondo 12 Pax&quot;</span>,</span>
+<span id="cb12-103"><a href="#cb12-103" tabindex="-1"></a>                        <span class="st">&quot;Apto Cun Puerto-Morelos-Redondo 1 A 6  Paxs&quot;</span>,</span>
+<span id="cb12-104"><a href="#cb12-104" tabindex="-1"></a>                        <span class="st">&quot;Transfer Tlc: Tollocan A Santa Fe&quot;</span>,</span>
+<span id="cb12-105"><a href="#cb12-105" tabindex="-1"></a>                        <span class="st">&quot;Silao:Bjx A Central De Autobuses&quot;</span>,</span>
+<span id="cb12-106"><a href="#cb12-106" tabindex="-1"></a>                        <span class="st">&quot;Transfer Tlc: Aeropuerto A Tollocan&quot;</span>,</span>
+<span id="cb12-107"><a href="#cb12-107" tabindex="-1"></a>                        <span class="st">&quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres Priv-Redondo 1&quot;</span>,</span>
+<span id="cb12-108"><a href="#cb12-108" tabindex="-1"></a>                        <span class="st">&quot;Taxi Acapulco Zona Dorada 3 Pax&quot;</span>,</span>
+<span id="cb12-109"><a href="#cb12-109" tabindex="-1"></a>                        <span class="st">&quot;Combovivaplay2&quot;</span>,</span>
+<span id="cb12-110"><a href="#cb12-110" tabindex="-1"></a>                        <span class="st">&quot;Licor Charter&quot;</span>,</span>
+<span id="cb12-111"><a href="#cb12-111" tabindex="-1"></a>                        <span class="st">&quot;Quaker Avena Moras&quot;</span>,</span>
+<span id="cb12-112"><a href="#cb12-112" tabindex="-1"></a>                        <span class="st">&quot;Combo Vino Cria Cuervos&quot;</span>,</span>
+<span id="cb12-113"><a href="#cb12-113" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx A Polanco-Angel Independencia.&quot;</span>,</span>
+<span id="cb12-114"><a href="#cb12-114" tabindex="-1"></a>                        <span class="st">&quot;Quaker Natural Balance&quot;</span>,</span>
+<span id="cb12-115"><a href="#cb12-115" tabindex="-1"></a>                        <span class="st">&quot;San Miguel De Allende:Bjx A Central De Autobuses&quot;</span>,</span>
+<span id="cb12-116"><a href="#cb12-116" tabindex="-1"></a>                        <span class="st">&quot;Zona-6 Sancatarina 4pax&quot;</span>,</span>
+<span id="cb12-117"><a href="#cb12-117" tabindex="-1"></a>                        <span class="st">&quot;Akumal O Puerto Aventuras Sencillo 12 Pax&quot;</span>,</span>
+<span id="cb12-118"><a href="#cb12-118" tabindex="-1"></a>                        <span class="st">&quot;Akumal O Puerto Aventura Sencillo 6 Pax&quot;</span>,</span>
+<span id="cb12-119"><a href="#cb12-119" tabindex="-1"></a>                        <span class="st">&quot;Taxi Tlc: Robles. Ocoyoacac&quot;</span>,</span>
+<span id="cb12-120"><a href="#cb12-120" tabindex="-1"></a>                        <span class="st">&quot;Transfer Cjs: Centro De El Paso&quot;</span>,</span>
+<span id="cb12-121"><a href="#cb12-121" tabindex="-1"></a>                        <span class="st">&quot;Cuerno Individual Charter&quot;</span>,</span>
+<span id="cb12-122"><a href="#cb12-122" tabindex="-1"></a>                        <span class="st">&quot;Combo Stl&quot;</span>,</span>
+<span id="cb12-123"><a href="#cb12-123" tabindex="-1"></a>                        <span class="st">&quot;Eco Holder&quot;</span>,</span>
+<span id="cb12-124"><a href="#cb12-124" tabindex="-1"></a>                        <span class="st">&quot;Akumal O Puerto Aventuras Redondo 6 Pax&quot;</span>,</span>
+<span id="cb12-125"><a href="#cb12-125" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx - Aeropuerto&quot;</span>,</span>
+<span id="cb12-126"><a href="#cb12-126" tabindex="-1"></a>                        <span class="st">&quot;Zona-4 Tec-Mty 10pax&quot;</span>,</span>
+<span id="cb12-127"><a href="#cb12-127" tabindex="-1"></a>                        <span class="st">&quot;Transfer Tlc: Aeropuerto A Cuautitlan&quot;</span>,</span>
+<span id="cb12-128"><a href="#cb12-128" tabindex="-1"></a>                        <span class="st">&quot;Zona-5 Sanpedro 10pax&quot;</span>,</span>
+<span id="cb12-129"><a href="#cb12-129" tabindex="-1"></a>                        <span class="st">&quot;Transfer Cjs : Aeropuerto De El Paso&quot;</span>,</span>
+<span id="cb12-130"><a href="#cb12-130" tabindex="-1"></a>                        <span class="st">&quot;Taxi Veracruz-Boca Rio-6pax&quot;</span>,</span>
+<span id="cb12-131"><a href="#cb12-131" tabindex="-1"></a>                        <span class="st">&quot;Taxi Veracruz-Boca Rio-4pax&quot;</span>,</span>
+<span id="cb12-132"><a href="#cb12-132" tabindex="-1"></a>                        <span class="st">&quot;Zona-1 Apodaca 10pax&quot;</span>,</span>
+<span id="cb12-133"><a href="#cb12-133" tabindex="-1"></a>                        <span class="st">&quot;Cerveza Charter&quot;</span>,</span>
+<span id="cb12-134"><a href="#cb12-134" tabindex="-1"></a>                        <span class="st">&quot;Maxi Combo&quot;</span>,</span>
+<span id="cb12-135"><a href="#cb12-135" tabindex="-1"></a>                        <span class="st">&quot;Zona-3 Centro Mty 10pax&quot;</span>,</span>
+<span id="cb12-136"><a href="#cb12-136" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx - Sur. Norte&quot;</span>,</span>
+<span id="cb12-137"><a href="#cb12-137" tabindex="-1"></a>                        <span class="st">&quot;Akumal O Puerto Aventuras Redondo 12 Pax&quot;</span>,</span>
+<span id="cb12-138"><a href="#cb12-138" tabindex="-1"></a>                        <span class="st">&quot;Taxi Huatulco Puerto Escondido 3pax&quot;</span>,</span>
+<span id="cb12-139"><a href="#cb12-139" tabindex="-1"></a>                        <span class="st">&quot;Charter Licor Doble&quot;</span>,</span>
+<span id="cb12-140"><a href="#cb12-140" tabindex="-1"></a>                        <span class="st">&quot;Chokis&quot;</span>,</span>
+<span id="cb12-141"><a href="#cb12-141" tabindex="-1"></a>                        <span class="st">&quot;Sprite&quot;</span>,</span>
+<span id="cb12-142"><a href="#cb12-142" tabindex="-1"></a>                        <span class="st">&quot;Cheetos&quot;</span>,</span>
+<span id="cb12-143"><a href="#cb12-143" tabindex="-1"></a>                        <span class="st">&quot;Arcoiris&quot;</span>,</span>
+<span id="cb12-144"><a href="#cb12-144" tabindex="-1"></a>                        <span class="st">&quot;Tostitos&quot;</span>,</span>
+<span id="cb12-145"><a href="#cb12-145" tabindex="-1"></a>                        <span class="st">&quot;Xx Lager&quot;</span>,</span>
+<span id="cb12-146"><a href="#cb12-146" tabindex="-1"></a>                        <span class="st">&quot;Xx Ultra&quot;</span>,</span>
+<span id="cb12-147"><a href="#cb12-147" tabindex="-1"></a>                        <span class="st">&quot;Cafe Costa&quot;</span>,</span>
+<span id="cb12-148"><a href="#cb12-148" tabindex="-1"></a>                        <span class="st">&quot;Nissin Res&quot;</span>,</span>
+<span id="cb12-149"><a href="#cb12-149" tabindex="-1"></a>                        <span class="st">&quot;Combo Cheve&quot;</span>,</span>
+<span id="cb12-150"><a href="#cb12-150" tabindex="-1"></a>                        <span class="st">&quot;Combo Snack&quot;</span>,</span>
+<span id="cb12-151"><a href="#cb12-151" tabindex="-1"></a>                        <span class="st">&quot;Hazme Doble&quot;</span>,</span>
+<span id="cb12-152"><a href="#cb12-152" tabindex="-1"></a>                        <span class="st">&quot;Rancheritos&quot;</span>,</span>
+<span id="cb12-153"><a href="#cb12-153" tabindex="-1"></a>                        <span class="st">&quot;Super Combo&quot;</span>,</span>
+<span id="cb12-154"><a href="#cb12-154" tabindex="-1"></a>                        <span class="st">&quot;Amstel Ultra&quot;</span>,</span>
+<span id="cb12-155"><a href="#cb12-155" tabindex="-1"></a>                        <span class="st">&quot;Nissin Fuego&quot;</span>,</span>
+<span id="cb12-156"><a href="#cb12-156" tabindex="-1"></a>                        <span class="st">&quot;Tecate Light&quot;</span>,</span>
+<span id="cb12-157"><a href="#cb12-157" tabindex="-1"></a>                        <span class="st">&quot;Doritos Nacho&quot;</span>,</span>
+<span id="cb12-158"><a href="#cb12-158" tabindex="-1"></a>                        <span class="st">&quot;Jugo De Mango&quot;</span>,</span>
+<span id="cb12-159"><a href="#cb12-159" tabindex="-1"></a>                        <span class="st">&quot;Mafer Sin Sal&quot;</span>,</span>
+<span id="cb12-160"><a href="#cb12-160" tabindex="-1"></a>                        <span class="st">&quot;Ruffles Queso&quot;</span>,</span>
+<span id="cb12-161"><a href="#cb12-161" tabindex="-1"></a>                        <span class="st">&quot;Sidral Mundet&quot;</span>,</span>
+<span id="cb12-162"><a href="#cb12-162" tabindex="-1"></a>                        <span class="st">&quot;Combo Aventura&quot;</span>,</span>
+<span id="cb12-163"><a href="#cb12-163" tabindex="-1"></a>                        <span class="st">&quot;Nissin Picante&quot;</span>,</span>
+<span id="cb12-164"><a href="#cb12-164" tabindex="-1"></a>                        <span class="st">&quot;Panini Clasico&quot;</span>,</span>
+<span id="cb12-165"><a href="#cb12-165" tabindex="-1"></a>                        <span class="st">&quot;Cafe 19 Chiapas&quot;</span>,</span>
+<span id="cb12-166"><a href="#cb12-166" tabindex="-1"></a>                        <span class="st">&quot;Capitan Morning&quot;</span>,</span>
+<span id="cb12-167"><a href="#cb12-167" tabindex="-1"></a>                        <span class="st">&quot;Coca Cola Dieta&quot;</span>,</span>
+<span id="cb12-168"><a href="#cb12-168" tabindex="-1"></a>                        <span class="st">&quot;Coca Sin Azucar&quot;</span>,</span>
+<span id="cb12-169"><a href="#cb12-169" tabindex="-1"></a>                        <span class="st">&quot;Heineken Silver&quot;</span>,</span>
+<span id="cb12-170"><a href="#cb12-170" tabindex="-1"></a>                        <span class="st">&quot;Jugo De Manzana&quot;</span>,</span>
+<span id="cb12-171"><a href="#cb12-171" tabindex="-1"></a>                        <span class="st">&quot;Panini Integral&quot;</span>,</span>
+<span id="cb12-172"><a href="#cb12-172" tabindex="-1"></a>                        <span class="st">&quot;Fanta De Naranja&quot;</span>,</span>
+<span id="cb12-173"><a href="#cb12-173" tabindex="-1"></a>                        <span class="st">&quot;Licor + Refresco&quot;</span>,</span>
+<span id="cb12-174"><a href="#cb12-174" tabindex="-1"></a>                        <span class="st">&quot;Nishikawa Salado&quot;</span>,</span>
+<span id="cb12-175"><a href="#cb12-175" tabindex="-1"></a>                        <span class="st">&quot;Cafe 19 Capuchino&quot;</span>,</span>
+<span id="cb12-176"><a href="#cb12-176" tabindex="-1"></a>                        <span class="st">&quot;Ciel Mineralizada&quot;</span>,</span>
+<span id="cb12-177"><a href="#cb12-177" tabindex="-1"></a>                        <span class="st">&quot;Coca Cola Regular&quot;</span>,</span>
+<span id="cb12-178"><a href="#cb12-178" tabindex="-1"></a>                        <span class="st">&quot;Heineken Original&quot;</span>,</span>
+<span id="cb12-179"><a href="#cb12-179" tabindex="-1"></a>                        <span class="st">&quot;Combocine1&quot;</span>,</span>
+<span id="cb12-180"><a href="#cb12-180" tabindex="-1"></a>                        <span class="st">&quot;Combovivaplay3&quot;</span>,</span>
+<span id="cb12-181"><a href="#cb12-181" tabindex="-1"></a>                        <span class="st">&quot;Nissin Limon Y Habanero&quot;</span>,</span>
+<span id="cb12-182"><a href="#cb12-182" tabindex="-1"></a>                        <span class="st">&quot;Heineken 0&quot;</span>,</span>
+<span id="cb12-183"><a href="#cb12-183" tabindex="-1"></a>                        <span class="st">&quot;Taxi Tlc: Sendero&quot;</span>,</span>
+<span id="cb12-184"><a href="#cb12-184" tabindex="-1"></a>                        <span class="st">&quot;Taxi Tlc: Central. San Mateo&quot;</span>,</span>
+<span id="cb12-185"><a href="#cb12-185" tabindex="-1"></a>                        <span class="st">&quot;Taxi Zihuatanejo Zona 1-3pax&quot;</span>,</span>
+<span id="cb12-186"><a href="#cb12-186" tabindex="-1"></a>                        <span class="st">&quot;Combo Cheve Doble + Carne&quot;</span>,</span>
+<span id="cb12-187"><a href="#cb12-187" tabindex="-1"></a>                        <span class="st">&quot;Transfer Cjs: Consulado Americano&quot;</span>,</span>
+<span id="cb12-188"><a href="#cb12-188" tabindex="-1"></a>                        <span class="st">&quot;Tulum Sencillo 12 Pax&quot;</span>,</span>
+<span id="cb12-189"><a href="#cb12-189" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cabos Zona 3 4pax&quot;</span>,</span>
+<span id="cb12-190"><a href="#cb12-190" tabindex="-1"></a>                        <span class="st">&quot;Zona-6 Sancatarina 10pax&quot;</span>,</span>
+<span id="cb12-191"><a href="#cb12-191" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cabos Zona 1 4pax&quot;</span>,</span>
+<span id="cb12-192"><a href="#cb12-192" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx - Observatorio&quot;</span>,</span>
+<span id="cb12-193"><a href="#cb12-193" tabindex="-1"></a>                        <span class="st">&quot;Gomita Enchilada La Cueva&quot;</span>,</span>
+<span id="cb12-194"><a href="#cb12-194" tabindex="-1"></a>                        <span class="st">&quot;Mega Cuerno Tripulacion&quot;</span>,</span>
+<span id="cb12-195"><a href="#cb12-195" tabindex="-1"></a>                        <span class="st">&quot;Club Sandwich&quot;</span>,</span>
+<span id="cb12-196"><a href="#cb12-196" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx - Centro.&quot;</span>,</span>
+<span id="cb12-197"><a href="#cb12-197" tabindex="-1"></a>                        <span class="st">&quot;Combo Licor Charter&quot;</span>,</span>
+<span id="cb12-198"><a href="#cb12-198" tabindex="-1"></a>                        <span class="st">&quot;Cheve+Carne+Hsbc&quot;</span>,</span>
+<span id="cb12-199"><a href="#cb12-199" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cabos Zona 2 4pax&quot;</span>,</span>
+<span id="cb12-200"><a href="#cb12-200" tabindex="-1"></a>                        <span class="st">&quot;Kacang Flaming Hot&quot;</span>,</span>
+<span id="cb12-201"><a href="#cb12-201" tabindex="-1"></a>                        <span class="st">&quot;Taxi Tlc: Zona Industial&quot;</span>,</span>
+<span id="cb12-202"><a href="#cb12-202" tabindex="-1"></a>                        <span class="st">&quot;Combo Healthy Crew&quot;</span>,</span>
+<span id="cb12-203"><a href="#cb12-203" tabindex="-1"></a>                        <span class="st">&quot;Leche De Fresa Sc&quot;</span>,</span>
+<span id="cb12-204"><a href="#cb12-204" tabindex="-1"></a>                        <span class="st">&quot;Nishikawa Japones&quot;</span>,</span>
+<span id="cb12-205"><a href="#cb12-205" tabindex="-1"></a>                        <span class="st">&quot;Super Combo Doble&quot;</span>,</span>
+<span id="cb12-206"><a href="#cb12-206" tabindex="-1"></a>                        <span class="st">&quot;Cheetos Flamin Hot&quot;</span>,</span>
+<span id="cb12-207"><a href="#cb12-207" tabindex="-1"></a>                        <span class="st">&quot;Emperador Vainilla&quot;</span>,</span>
+<span id="cb12-208"><a href="#cb12-208" tabindex="-1"></a>                        <span class="st">&quot;Fritos Limon Y Sal&quot;</span>,</span>
+<span id="cb12-209"><a href="#cb12-209" tabindex="-1"></a>                        <span class="st">&quot;Nissin Dark Dragon&quot;</span>,</span>
+<span id="cb12-210"><a href="#cb12-210" tabindex="-1"></a>                        <span class="st">&quot;Agua Natural 600 Ml&quot;</span>,</span>
+<span id="cb12-211"><a href="#cb12-211" tabindex="-1"></a>                        <span class="st">&quot;Emperador Chocolate&quot;</span>,</span>
+<span id="cb12-212"><a href="#cb12-212" tabindex="-1"></a>                        <span class="st">&quot;Mega Cuerno Clasico&quot;</span>,</span>
+<span id="cb12-213"><a href="#cb12-213" tabindex="-1"></a>                        <span class="st">&quot;Sabritas Flamin Hot&quot;</span>,</span>
+<span id="cb12-214"><a href="#cb12-214" tabindex="-1"></a>                        <span class="st">&quot;Sabritas Originales&quot;</span>,</span>
+<span id="cb12-215"><a href="#cb12-215" tabindex="-1"></a>                        <span class="st">&quot;Leche De Chocolate Sc&quot;</span>,</span>
+<span id="cb12-216"><a href="#cb12-216" tabindex="-1"></a>                        <span class="st">&quot;Cuerno Clasico De Pavo&quot;</span>,</span>
+<span id="cb12-217"><a href="#cb12-217" tabindex="-1"></a>                        <span class="st">&quot;Topochico Seltzer Mango&quot;</span>,</span>
+<span id="cb12-218"><a href="#cb12-218" tabindex="-1"></a>                        <span class="st">&quot;Combo Snack Con Frubotana&quot;</span>,</span>
+<span id="cb12-219"><a href="#cb12-219" tabindex="-1"></a>                        <span class="st">&quot;Vino Tinto Sangre De Toro&quot;</span>,</span>
+<span id="cb12-220"><a href="#cb12-220" tabindex="-1"></a>                        <span class="st">&quot;Taxi Zihuatanejo Zona 2 - 3pax&quot;</span>,</span>
+<span id="cb12-221"><a href="#cb12-221" tabindex="-1"></a>                        <span class="st">&quot;Taxi Cdmx- Interlomas_Bosque-Real&quot;</span>,</span>
+<span id="cb12-222"><a href="#cb12-222" tabindex="-1"></a>                        <span class="st">&quot;Taxi Huatulco Mazunte/Zipolite 3pax&quot;</span>)</span>
+<span id="cb12-223"><a href="#cb12-223" tabindex="-1"></a></span>
+<span id="cb12-224"><a href="#cb12-224" tabindex="-1"></a><span class="co"># Verificar que los valores corregidos estén bien</span></span>
+<span id="cb12-225"><a href="#cb12-225" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Valores corregidos para ProductName:&quot;</span>)</span></code></pre></div>
+<pre><code>## [1] &quot;Valores corregidos para ProductName:&quot;</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">print</span>(valores_corregidos)</span></code></pre></div>
+<pre><code>##   [1] &quot;Carne Seca Habanero&quot;                                                 
+##   [2] &quot;Jw Red Label&quot;                                                        
+##   [3] &quot;Jack And Coke&quot;                                                       
+##   [4] &quot;Jw Red Label&quot;                                                        
+##   [5] &quot;Vivabus Gdl.-Nvo. C. Camionera&quot;                                      
+##   [6] &quot;Ron Bacardi&quot;                                                         
+##   [7] &quot;Baileys&quot;                                                             
+##   [8] &quot;Corajillo&quot;                                                           
+##   [9] &quot;Transfer Cun: Zona Hotelera Sencillo&quot;                                
+##  [10] &quot;Muffin Integral&quot;                                                     
+##  [11] &quot;Tequila 7 Leguas Reposado&quot;                                           
+##  [12] &quot;Arandano Mango Mix&quot;                                                  
+##  [13] &quot;Quaker Granola&quot;                                                      
+##  [14] &quot;Tequila 7 Leguas Blanco&quot;                                             
+##  [15] &quot;Combo Cheve + Carne&quot;                                                 
+##  [16] &quot;Sol Clamato&quot;                                                         
+##  [17] &quot;Tequila + Mezclador&quot;                                                 
+##  [18] &quot;Quaker Avena Frutos Rojos&quot;                                           
+##  [19] &quot;Go Nuts&quot;                                                             
+##  [20] &quot;Arandano&quot;                                                            
+##  [21] &quot;Combo Vino&quot;                                                          
+##  [22] &quot;Tinto&quot;                                                               
+##  [23] &quot;Nutty Berry Mix&quot;                                                     
+##  [24] &quot;Promo Amstel&quot;                                                        
+##  [25] &quot;Frutos Secos Enchilados&quot;                                             
+##  [26] &quot;Vivabus Cancun: Playa Del Carmen (Sencillo)&quot;                         
+##  [27] &quot;Te Relax&quot;                                                            
+##  [28] &quot;Dip De Queso&quot;                                                        
+##  [29] &quot;Crea Combo Crew 1&quot;                                                   
+##  [30] &quot;Te Frutos Rojos&quot;                                                     
+##  [31] &quot;Ultra Seltzer Frambuesa&quot;                                             
+##  [32] &quot;Corajillo Baileys&quot;                                                   
+##  [33] &quot;Vivabus Monterrey: Central&quot;                                          
+##  [34] &quot;Vino Tinto Cria Cuervos&quot;                                             
+##  [35] &quot;Cat.C.Com&quot;                                                           
+##  [36] &quot;Capitan Morning Con Pan Dulce&quot;                                       
+##  [37] &quot;Te Manzanilla Jengibre&quot;                                              
+##  [38] &quot;Apto Cun-Centro/Hoteles/Pto Juarez 1 A 6 Redondo&quot;                    
+##  [39] &quot;Baileys&quot;                                                             
+##  [40] &quot;Vivabus:Shuttle Apto.-Centro Tul.(Sencillo)&quot;                         
+##  [41] &quot;Nueces De Arbol Mix&quot;                                                 
+##  [42] &quot;Carne Seca Original&quot;                                                 
+##  [43] &quot;Luxury Nut Mix&quot;                                                      
+##  [44] &quot;Combo Cheve Doble&quot;                                                   
+##  [45] &quot;Botana Sabritas Con Dip De Queso&quot;                                    
+##  [46] &quot;Galleta De Chispas De Chocolate&quot;                                     
+##  [47] &quot;Vivabus Monterrey: Fierro (Y Griega)&quot;                                
+##  [48] &quot;Tostitos Nachos Con Dip&quot;                                             
+##  [49] &quot;Promo Hsbc 1 Bebida Gratis&quot;                                          
+##  [50] &quot;Protein Adventure&quot;                                                   
+##  [51] &quot;Crea Combo Crew 3&quot;                                                   
+##  [52] &quot;Vino Blanco Cria Cuervos&quot;                                            
+##  [53] &quot;Hsbc-Viva&quot;                                                           
+##  [54] &quot;Galleta De Chocolate&quot;                                                
+##  [55] &quot;Topochico Seltzer Fresa-Guayaba&quot;                                     
+##  [56] &quot;Apto Cun-Centro/Hoteles/Pto Juarez 7 A 12 Redondo&quot;                   
+##  [57] &quot;Te Vainilla&quot;                                                         
+##  [58] &quot;Apto Cun-Centro/Hoteles/Pto Juarez 1 A 6 Sencillo&quot;                   
+##  [59] &quot;Zona-5 Sanpedro 4pax&quot;                                                
+##  [60] &quot;Tulum Redondo 6 Pax&quot;                                                 
+##  [61] &quot;Combo Snack + Hsbc-Viva&quot;                                             
+##  [62] &quot;Transfer Tlc: Aeropuerto A Observatorio&quot;                             
+##  [63] &quot;Cafe De Olla&quot;                                                        
+##  [64] &quot;Zona-3 Centro Mty 4pax&quot;                                              
+##  [65] &quot;Cat.L.&quot;                                                              
+##  [66] &quot;Vivaplay&quot;                                                            
+##  [67] &quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres-Priv-Sencillo&quot; 
+##  [68] &quot;Galleta De Arandano Relleno De Q/Crema&quot;                              
+##  [69] &quot;Vivabus Cancun: Playa Del Carmen (Redondo)&quot;                          
+##  [70] &quot;Salsa Botanera&quot;                                                      
+##  [71] &quot;Cat.A.Subc&quot;                                                          
+##  [72] &quot;Cat.D.Sdn&quot;                                                           
+##  [73] &quot;Coco Bongo Playa&quot;                                                    
+##  [74] &quot;Zona-4 Tec-Mty 4pax&quot;                                                 
+##  [75] &quot;Taxi Cdmx - Santa Fe&quot;                                                
+##  [76] &quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres Priv-Redondo 6&quot;
+##  [77] &quot;Aifa A Central Taxquena&quot;                                             
+##  [78] &quot;Zona-2 San Nicolas 4pax&quot;                                             
+##  [79] &quot;Transfer Leon: Central.Puerta Milenio Mega Centro.Poliforum&quot;         
+##  [80] &quot;Hsbc Promo 1c&quot;                                                       
+##  [81] &quot;Apto Cun Puerto-Morelos-Sencillo 1 A 6  Paxs&quot;                        
+##  [82] &quot;Apto Cun Puerto-Morelos-Sencillo 7 A 12&quot;                             
+##  [83] &quot;Cafe 19 Cafe Clasico&quot;                                                
+##  [84] &quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujerespriv-Sencillo 1&quot;
+##  [85] &quot;Zona-1 Apodaca 4pax&quot;                                                 
+##  [86] &quot;Apto.Gdl.-Terminal Zapopan&quot;                                          
+##  [87] &quot;Guanajuato :Bjx A Central De Autobuses&quot;                              
+##  [88] &quot;Coco Bongo Cancun Apartado&quot;                                          
+##  [89] &quot;Crea Combo Crew 2&quot;                                                   
+##  [90] &quot;Coco Bongo Full Pack&quot;                                                
+##  [91] &quot;Aifa  A Central Del Norte&quot;                                           
+##  [92] &quot;Transfer Tlc: Tollocan A Aicm&quot;                                       
+##  [93] &quot;Tulum Sencillo 6 Pax&quot;                                                
+##  [94] &quot;Zona-2 San Nicolas 10pax&quot;                                            
+##  [95] &quot;Apto Cun Puerto-Morelos-Redondo7 A 12&quot;                               
+##  [96] &quot;Combo Cheve + Hsbc-Viva&quot;                                             
+##  [97] &quot;Apto Cun-Centro/Hoteles/Pto Juarez 12paxs Sencillo&quot;                  
+##  [98] &quot;Charter Cheve Doble&quot;                                                 
+##  [99] &quot;Taxi Tlc: Centro&quot;                                                    
+## [100] &quot;Cancun Plaza Las Americas Sencillo&quot;                                  
+## [101] &quot;Tulum Redondo 12 Pax&quot;                                                
+## [102] &quot;Apto Cun Puerto-Morelos-Redondo 1 A 6  Paxs&quot;                         
+## [103] &quot;Transfer Tlc: Tollocan A Santa Fe&quot;                                   
+## [104] &quot;Silao:Bjx A Central De Autobuses&quot;                                    
+## [105] &quot;Transfer Tlc: Aeropuerto A Tollocan&quot;                                 
+## [106] &quot;Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres Priv-Redondo 1&quot;
+## [107] &quot;Taxi Acapulco Zona Dorada 3 Pax&quot;                                     
+## [108] &quot;Combovivaplay2&quot;                                                      
+## [109] &quot;Licor Charter&quot;                                                       
+## [110] &quot;Quaker Avena Moras&quot;                                                  
+## [111] &quot;Combo Vino Cria Cuervos&quot;                                             
+## [112] &quot;Taxi Cdmx A Polanco-Angel Independencia.&quot;                            
+## [113] &quot;Quaker Natural Balance&quot;                                              
+## [114] &quot;San Miguel De Allende:Bjx A Central De Autobuses&quot;                    
+## [115] &quot;Zona-6 Sancatarina 4pax&quot;                                             
+## [116] &quot;Akumal O Puerto Aventuras Sencillo 12 Pax&quot;                           
+## [117] &quot;Akumal O Puerto Aventura Sencillo 6 Pax&quot;                             
+## [118] &quot;Taxi Tlc: Robles. Ocoyoacac&quot;                                         
+## [119] &quot;Transfer Cjs: Centro De El Paso&quot;                                     
+## [120] &quot;Cuerno Individual Charter&quot;                                           
+## [121] &quot;Combo Stl&quot;                                                           
+## [122] &quot;Eco Holder&quot;                                                          
+## [123] &quot;Akumal O Puerto Aventuras Redondo 6 Pax&quot;                             
+## [124] &quot;Taxi Cdmx - Aeropuerto&quot;                                              
+## [125] &quot;Zona-4 Tec-Mty 10pax&quot;                                                
+## [126] &quot;Transfer Tlc: Aeropuerto A Cuautitlan&quot;                               
+## [127] &quot;Zona-5 Sanpedro 10pax&quot;                                               
+## [128] &quot;Transfer Cjs : Aeropuerto De El Paso&quot;                                
+## [129] &quot;Taxi Veracruz-Boca Rio-6pax&quot;                                         
+## [130] &quot;Taxi Veracruz-Boca Rio-4pax&quot;                                         
+## [131] &quot;Zona-1 Apodaca 10pax&quot;                                                
+## [132] &quot;Cerveza Charter&quot;                                                     
+## [133] &quot;Maxi Combo&quot;                                                          
+## [134] &quot;Zona-3 Centro Mty 10pax&quot;                                             
+## [135] &quot;Taxi Cdmx - Sur. Norte&quot;                                              
+## [136] &quot;Akumal O Puerto Aventuras Redondo 12 Pax&quot;                            
+## [137] &quot;Taxi Huatulco Puerto Escondido 3pax&quot;                                 
+## [138] &quot;Charter Licor Doble&quot;                                                 
+## [139] &quot;Chokis&quot;                                                              
+## [140] &quot;Sprite&quot;                                                              
+## [141] &quot;Cheetos&quot;                                                             
+## [142] &quot;Arcoiris&quot;                                                            
+## [143] &quot;Tostitos&quot;                                                            
+## [144] &quot;Xx Lager&quot;                                                            
+## [145] &quot;Xx Ultra&quot;                                                            
+## [146] &quot;Cafe Costa&quot;                                                          
+## [147] &quot;Nissin Res&quot;                                                          
+## [148] &quot;Combo Cheve&quot;                                                         
+## [149] &quot;Combo Snack&quot;                                                         
+## [150] &quot;Hazme Doble&quot;                                                         
+## [151] &quot;Rancheritos&quot;                                                         
+## [152] &quot;Super Combo&quot;                                                         
+## [153] &quot;Amstel Ultra&quot;                                                        
+## [154] &quot;Nissin Fuego&quot;                                                        
+## [155] &quot;Tecate Light&quot;                                                        
+## [156] &quot;Doritos Nacho&quot;                                                       
+## [157] &quot;Jugo De Mango&quot;                                                       
+## [158] &quot;Mafer Sin Sal&quot;                                                       
+## [159] &quot;Ruffles Queso&quot;                                                       
+## [160] &quot;Sidral Mundet&quot;                                                       
+## [161] &quot;Combo Aventura&quot;                                                      
+## [162] &quot;Nissin Picante&quot;                                                      
+## [163] &quot;Panini Clasico&quot;                                                      
+## [164] &quot;Cafe 19 Chiapas&quot;                                                     
+## [165] &quot;Capitan Morning&quot;                                                     
+## [166] &quot;Coca Cola Dieta&quot;                                                     
+## [167] &quot;Coca Sin Azucar&quot;                                                     
+## [168] &quot;Heineken Silver&quot;                                                     
+## [169] &quot;Jugo De Manzana&quot;                                                     
+## [170] &quot;Panini Integral&quot;                                                     
+## [171] &quot;Fanta De Naranja&quot;                                                    
+## [172] &quot;Licor + Refresco&quot;                                                    
+## [173] &quot;Nishikawa Salado&quot;                                                    
+## [174] &quot;Cafe 19 Capuchino&quot;                                                   
+## [175] &quot;Ciel Mineralizada&quot;                                                   
+## [176] &quot;Coca Cola Regular&quot;                                                   
+## [177] &quot;Heineken Original&quot;                                                   
+## [178] &quot;Combocine1&quot;                                                          
+## [179] &quot;Combovivaplay3&quot;                                                      
+## [180] &quot;Nissin Limon Y Habanero&quot;                                             
+## [181] &quot;Heineken 0&quot;                                                          
+## [182] &quot;Taxi Tlc: Sendero&quot;                                                   
+## [183] &quot;Taxi Tlc: Central. San Mateo&quot;                                        
+## [184] &quot;Taxi Zihuatanejo Zona 1-3pax&quot;                                        
+## [185] &quot;Combo Cheve Doble + Carne&quot;                                           
+## [186] &quot;Transfer Cjs: Consulado Americano&quot;                                   
+## [187] &quot;Tulum Sencillo 12 Pax&quot;                                               
+## [188] &quot;Taxi Cabos Zona 3 4pax&quot;                                              
+## [189] &quot;Zona-6 Sancatarina 10pax&quot;                                            
+## [190] &quot;Taxi Cabos Zona 1 4pax&quot;                                              
+## [191] &quot;Taxi Cdmx - Observatorio&quot;                                            
+## [192] &quot;Gomita Enchilada La Cueva&quot;                                           
+## [193] &quot;Mega Cuerno Tripulacion&quot;                                             
+## [194] &quot;Club Sandwich&quot;                                                       
+## [195] &quot;Taxi Cdmx - Centro.&quot;                                                 
+## [196] &quot;Combo Licor Charter&quot;                                                 
+## [197] &quot;Cheve+Carne+Hsbc&quot;                                                    
+## [198] &quot;Taxi Cabos Zona 2 4pax&quot;                                              
+## [199] &quot;Kacang Flaming Hot&quot;                                                  
+## [200] &quot;Taxi Tlc: Zona Industial&quot;                                            
+## [201] &quot;Combo Healthy Crew&quot;                                                  
+## [202] &quot;Leche De Fresa Sc&quot;                                                   
+## [203] &quot;Nishikawa Japones&quot;                                                   
+## [204] &quot;Super Combo Doble&quot;                                                   
+## [205] &quot;Cheetos Flamin Hot&quot;                                                  
+## [206] &quot;Emperador Vainilla&quot;                                                  
+## [207] &quot;Fritos Limon Y Sal&quot;                                                  
+## [208] &quot;Nissin Dark Dragon&quot;                                                  
+## [209] &quot;Agua Natural 600 Ml&quot;                                                 
+## [210] &quot;Emperador Chocolate&quot;                                                 
+## [211] &quot;Mega Cuerno Clasico&quot;                                                 
+## [212] &quot;Sabritas Flamin Hot&quot;                                                 
+## [213] &quot;Sabritas Originales&quot;                                                 
+## [214] &quot;Leche De Chocolate Sc&quot;                                               
+## [215] &quot;Cuerno Clasico De Pavo&quot;                                              
+## [216] &quot;Topochico Seltzer Mango&quot;                                             
+## [217] &quot;Combo Snack Con Frubotana&quot;                                           
+## [218] &quot;Vino Tinto Sangre De Toro&quot;                                           
+## [219] &quot;Taxi Zihuatanejo Zona 2 - 3pax&quot;                                      
+## [220] &quot;Taxi Cdmx- Interlomas_Bosque-Real&quot;                                   
+## [221] &quot;Taxi Huatulco Mazunte/Zipolite 3pax&quot;</code></pre>
+</div>
+<div id="columna-type-servicio---fisico" class="section level3">
+<h3>Columna Type (Servicio - Fisico)</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Definir una función para asignar el tipo según el tipo de producto</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>asignar_tipo <span class="ot">&lt;-</span> <span class="cf">function</span>(producto_tipo) {</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="cf">if</span> (producto_tipo <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Vivabus&quot;</span>, <span class="st">&quot;Transportaciones CUN&quot;</span>, <span class="st">&quot;Transportaciones MTY&quot;</span>, </span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>                           <span class="st">&quot;Transportaciones TLC&quot;</span>, <span class="st">&quot;Viva Play&quot;</span>, <span class="st">&quot;Viva Taxis&quot;</span>, </span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>                           <span class="st">&quot;Viva Transfer&quot;</span>, <span class="st">&quot;Antros&quot;</span>)) {</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>    <span class="fu">return</span>(<span class="st">&quot;Servicio&quot;</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>    <span class="fu">return</span>(<span class="st">&quot;Fisico&quot;</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>  }</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>}</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co"># Aplicar la función a la columna ProductType para crear la nueva columna Type</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>ventas<span class="sc">$</span>Type <span class="ot">&lt;-</span> <span class="fu">sapply</span>(ventas<span class="sc">$</span>ProductType, asignar_tipo)</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co"># Verificar que se haya creado correctamente la nueva columna</span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="fu">head</span>(ventas)</span></code></pre></div>
+<pre><code>##                          Flight_ID ProductType                    ProductName
+## 1 a05290288259526edd3601160b10e1de     Botanas            Carne Seca Habanero
+## 2 08f6f97437df8db101b050f1110be656     Licores                  Jw Red Label 
+## 3 4e09c949826a77207868412baeff6d30     Licores                  Jack And Coke
+## 4 c3e1568fe46c68d3174681d322d412b3     Licores                   Jw Red Label
+## 5 7396e43fb94caca87add7bb1f1611e7e     Vivabus Vivabus_Gdl.-Nvo. C. Camionera
+## 6 34ae909bf3699372fcd66f02af0bdd54     Licores                    Ron Bacardi
+##   Quantity TotalSales     Type
+## 1        1         55   Fisico
+## 2        2        240   Fisico
+## 3        8        576   Fisico
+## 4        2        240   Fisico
+## 5        4        320 Servicio
+## 6        2        240   Fisico</code></pre>
+</div>
+<div id="partición-type-fisico" class="section level3">
+<h3>Partición Type Fisico</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Función para asignar el subtipo según el tipo de producto</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>asignar_subtipo <span class="ot">&lt;-</span> <span class="cf">function</span>(producto_tipo, tipo) {</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  <span class="cf">if</span> (tipo <span class="sc">==</span> <span class="st">&quot;Servicio&quot;</span>) {</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>    <span class="cf">if</span> (producto_tipo <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Viva Transfer&quot;</span>, <span class="st">&quot;Viva Taxis&quot;</span>, </span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>                             <span class="st">&quot;Transportaciones MTY&quot;</span>, <span class="st">&quot;Transportaciones CUN&quot;</span>, <span class="st">&quot;Vivabus&quot;</span>)) {</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>      <span class="fu">return</span>(<span class="st">&quot;Transporte&quot;</span>)</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (producto_tipo <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Antros&quot;</span>)) {</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>      <span class="fu">return</span>(<span class="st">&quot;Entretenimiento&quot;</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (producto_tipo <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Viva Play&quot;</span>)) {</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>      <span class="fu">return</span>(<span class="st">&quot;Online&quot;</span>)</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>      <span class="fu">return</span>(<span class="st">&quot;Otros Servicios&quot;</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>    }</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>    <span class="cf">if</span> (producto_tipo <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Perecederos&quot;</span>, <span class="st">&quot;Alimentos Charter&quot;</span>)) {</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>      <span class="fu">return</span>(<span class="st">&quot;Perecederos&quot;</span>)</span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>      <span class="fu">return</span>(<span class="st">&quot;No Perecederos&quot;</span>)</span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>    }</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>  }</span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>}</span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a></span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="co"># Aplicar la función a las columnas ProductType y Type para crear la nueva columna SubType</span></span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a>ventas<span class="sc">$</span>SubType <span class="ot">&lt;-</span> <span class="fu">mapply</span>(asignar_subtipo, ventas<span class="sc">$</span>ProductType, ventas<span class="sc">$</span>Type)</span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a></span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a><span class="co"># Verificar que se haya creado correctamente la nueva columna</span></span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a><span class="fu">head</span>(ventas)</span></code></pre></div>
+<pre><code>##                          Flight_ID ProductType                    ProductName
+## 1 a05290288259526edd3601160b10e1de     Botanas            Carne Seca Habanero
+## 2 08f6f97437df8db101b050f1110be656     Licores                  Jw Red Label 
+## 3 4e09c949826a77207868412baeff6d30     Licores                  Jack And Coke
+## 4 c3e1568fe46c68d3174681d322d412b3     Licores                   Jw Red Label
+## 5 7396e43fb94caca87add7bb1f1611e7e     Vivabus Vivabus_Gdl.-Nvo. C. Camionera
+## 6 34ae909bf3699372fcd66f02af0bdd54     Licores                    Ron Bacardi
+##   Quantity TotalSales     Type        SubType
+## 1        1         55   Fisico No Perecederos
+## 2        2        240   Fisico No Perecederos
+## 3        8        576   Fisico No Perecederos
+## 4        2        240   Fisico No Perecederos
+## 5        4        320 Servicio     Transporte
+## 6        2        240   Fisico No Perecederos</code></pre>
+</div>
+<div id="join" class="section level3">
+<h3>Join</h3>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>df <span class="ot">&lt;-</span> vuelos <span class="sc">%&gt;%</span> </span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>  <span class="fu">left_join</span>(ventas, <span class="at">by =</span> <span class="st">&quot;Flight_ID&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="correciones-base" class="section level2">
+<h2>Correciones base</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>df_alt <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  <span class="fu">filter</span>(Type <span class="sc">!=</span> <span class="st">&quot;Servicios&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="fu">filter</span>(ProductType<span class="sc">!=</span> <span class="st">&quot;Specials&quot;</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>  <span class="fu">filter</span>(STD_Año <span class="sc">!=</span> <span class="dv">2024</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>  <span class="fu">filter</span>(ProductType <span class="sc">!=</span> <span class="st">&quot;Combos Crew&quot;</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>  <span class="fu">filter</span>(ProductType <span class="sc">!=</span> <span class="st">&quot;Ofertas&quot;</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>  <span class="fu">filter</span>(diferencia_horas <span class="sc">&lt;</span> <span class="dv">15</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>  <span class="fu">filter</span>(DepartureStation <span class="sc">!=</span> <span class="st">&quot;&quot;</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>  <span class="fu">filter</span>(ArrivalStation <span class="sc">!=</span> <span class="st">&quot;&quot;</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>  <span class="fu">filter</span>(Origin_Type <span class="sc">!=</span> <span class="st">&quot;&quot;</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>  <span class="fu">filter</span>(Destination_Type <span class="sc">!=</span> <span class="st">&quot;&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>df_alt <span class="ot">&lt;-</span> df_alt <span class="sc">%&gt;%</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Aeronave, <span class="sc">-</span>TotalSales)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>df_alt<span class="sc">$</span>ruta <span class="ot">&lt;-</span> <span class="fu">paste</span>(df_alt<span class="sc">$</span>DepartureStation, df_alt<span class="sc">$</span>ArrivalStation)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">boxplot</span>(df_alt<span class="sc">$</span>diferencia_horas, <span class="at">main =</span> <span class="st">&quot;Boxplot de la Variable&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Minutos&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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dKisvh4BpRABHSqrr0dAKURAh8rq6xFQChHQobL6egSUQgR0qKy+HgGlEAEdKquvR0ApRECHyurrEVAKEdChsvp6BJRCBHSorL4eAaUQAR0qq69HQClEQIfK6usRUAoR0KGy+noElEIEdKisvh4BpRABHSqrr0dAKURAh8rq6xFQChHQobL6egSUQgR0qKy+HgGlEAEdKquvR0ApRECHyurrEVAKEdChsvp6BJRCBHSorL4eAaUQAR0qq69HQClEQIfK6usRUAoR0KGy+noElEIEdKisvh4BpRABHSqrr0dAKURAh8rq6xFQChHQobL6egSUQgR0qKy+HgGlEAEdKquvR0ApRECHyurrEVAKEdChsvp6Rh/Qzb1ubUr1COhQWX09Iw3ofW98wkk/f2//40ypnsRgrfY21q6RBvSN61/+U0c8/Z7ex5lSPasdCR7cam9j7RppQB/3R03zDyefuX33x5nSPM07CuRb7W2sXSMN6P5bJz/c+phXCehwzDsK5FvtbaxdIw3osddMf/z8hgt9Cj8Yqx0JHtxqb2PtGmlAX/Fd101ffGrjCwV0KFY7Ejy41d7G2jXSgH715MtnL//6aQI6FJ7GNFRWX89IA9o09y282PHXva4ypXoEdKisvp7RBjTGlOoR0KGy+noElEIEdKisvh4BpRABHSqrr0dAKURAh8rq6xFQChHQobL6egSUQgR0qKy+HgGlEAEdKquvR0ApRECHyurrEVAKEdChsvp6BJRCBHSorL4eAaUQAR0qq69HQClEQIfK6usRUAoR0KGy+noElEIEdKisvh4BpRABHSqrr0dAKURAh8rq6xFQChHQobL6egSUQgR0qKy+HgGlEAEdKquvR0ApRECHyurrEVAKEdChsvp6BJRCBHSorL4eAaUQAR0qq69HQClEQIfK6usRUAoR0KGy+noElEIEdKisvh4BpRABHSqrr0dAKURAh8rq6xFQChHQobL6egSUQgR0qKy+HgGlEAEdKquvR0ApRECHyurrEVAKEdChsvp6BJRCEoO12ttYuwSUQlY7Ejy41d7G2iWg0GUoZBFQ6DIUsggoQJCAAgQJKECQgAIECShAkIACBAkoQJCAQpehkEVAoctQyCKg0GUoZBFQ6DIUsggodBkKWQQUugyFLAIKXYZCFgGFLkMhi4BCl6GQRUABggQUIEhAAYIEFCBIQAGCBBQgSEABggQUugyFLAIKXYZCFgGFLkMhi4BCl6GQRUChy1DIIqDQZShkEVDoMhSyCCh0GQpZBBS6DIUsAgoQNPqA3tDr1gIKlDP6gPY7TkCBctZ0QNMDmNsdA9a8kQb04iUCCqyWkQZ0r/138ik8sFpGGtDXvTl2nIAC5Yw0oNv++UdDxwkoWQyFLCMNaHPzuxZfOaXXZR4XZDEUsow1oEEeF2QxFLIIKHQZClkEFLoMhSwCCl2GQhYBhS5DIYuAQpehkEVAoctQyCKgAEECChAkoABBAgoQJKAAQQIKECSgAEECCl2GQhYBhS5DIYuAQpehkEVAoctQyCKg0GUoZBFQ6DIUsggodBkKWQQUugyFLAIKXYZCFgEFCBJQgCABBQgSUIAgAQUIElCAIAEFCBJQ6DIUsggodBkKWQQUugyFLAIKXYZCFgGFLkMhi4BCl6GQRUChy1DIIqDQZShkEVDoMhSyCChAkIACBAkoQJCAAgQJKECQgAIECShAkIBCl6GQRUChy1DIIqDQZShkEVDoMhSyCCh0GQpZBBS6DIUsAgpdhkIWAWVk0lqy2r+YPEQCyrisdvLKWu1fTR4iAQUIElCAIAEFCBJQgCABBQgSUIAgAQUIElCAIAEFCBJQgCABBQgSUIAgAQUIElCAIAEFCBpvQL/ypx/7s9v6XiSgQDljDeg7jp99P9onXdHvMgEFyhlpQH91/c/84V9e89krfuqA9/S6TkCBckYa0JM+svjK+07c3V3xbygAFY00oAfdvfjKHfvt7q4IKFDRSAN64icXX/n4Y3tdJ6BAOSMN6IWP/KXP3XbnbX9x0eFv7XVdxX9fEXgYKt22uQR0x4WHzu78kb/Y77pV/rUG1pjSbZvTJ8n3/vnl777iL7fN5zCAufCnjABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQJKAAQQIKECSgAEECChAkoABBAgoQ9P8BAa1UizWD4bYAAAAASUVORK5CYII=" width="672" /></p>
 </div>
 </div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlZpdmEiDQphdXRob3I6ICJEYXRhbG9yZHMiDQpkYXRlOiAiYHIgU3lzLkRhdGUoKWAiDQpvdXRwdXQ6DQogIGh0bWxfZG9jdW1lbnQ6DQogICAgdG9jOiB5ZXMNCiAgICB0b2NfZmxvYXQ6IHllcw0KICAgIGNvZGVfZG93bmxvYWQ6IHllcw0KICAgIHRoZW1lOiBqb3VybmFsDQogICAgaGlnaGxpZ2h0OiBweWdtZW50cw0KICAgIGNzczogZXN0aWxvcy5jc3MNCi0tLQ0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRX0NCmtuaXRyOjpvcHRzX2NodW5rJHNldChlY2hvID0gVFJVRSwgd2FybmluZyA9IEZBTFNFLCBtZXNzYWdlID0gRkFMU0UpDQpgYGANCg0KDQojIExpYnJlcmlhcw0KYGBge3J9DQpsaWJyYXJ5KGRwbHlyKQ0KbGlicmFyeShnZ3Bsb3QyKQ0KbGlicmFyeShkcGx5cikNCmxpYnJhcnkocmVhZHhsKQ0KbGlicmFyeSh0aWR5cikNCmxpYnJhcnkobHVicmlkYXRlKQ0KbGlicmFyeShwdXJycikNCmxpYnJhcnkocGxvdGx5KQ0KbGlicmFyeShmb3JlY2FzdCkNCmxpYnJhcnkocmVhZHhsKQ0KbGlicmFyeShEYXRhRXhwbG9yZXIpDQpsaWJyYXJ5KGRwbHlyKQ0KbGlicmFyeShnZ3Bsb3QyKQ0KbGlicmFyeSh0bSkNCmxpYnJhcnkod29yZGNsb3VkKQ0KbGlicmFyeShjbHVzdGVyKQ0KbGlicmFyeShmYWN0b2V4dHJhKSANCmxpYnJhcnkoZ3JpZEV4dHJhKQ0KbGlicmFyeShwdXJycikNCmxpYnJhcnkocFJPQykNCmxpYnJhcnkocnBhcnQpDQpsaWJyYXJ5KHJwYXJ0LnBsb3QpDQpsaWJyYXJ5KGUxMDcxKQ0KbGlicmFyeShnZ3B1YnIpDQpsaWJyYXJ5KGRsb29rcikNCmxpYnJhcnkoem9vKQ0KbGlicmFyeShjYXJldCkNCmxpYnJhcnkoc3RhdHMpDQpsaWJyYXJ5KHRzZXJpZXMpDQpsaWJyYXJ5KHJlYWRyKQ0KbGlicmFyeSh2YXJzKQ0KbGlicmFyeShzeXV6aGV0KQ0KbGlicmFyeShrYWJsZUV4dHJhKQ0KbGlicmFyeShwbG90bHkpDQpsaWJyYXJ5KHNjYWxlcykNCmxpYnJhcnkocmVhZHhsKQ0KbGlicmFyeShsdWJyaWRhdGUpDQpgYGANCg0KDQojIExpbXBpZXphIGRlIGRhdG9zDQpgYGB7cn0NCnZlbnRhcyA9IHJlYWQuY3N2KCJkYXRhYmFzZXMvU2FsZXMgVGVjX1ZhbGlkLmNzdiIpDQp2dWVsb3MgPSByZWFkLmNzdigiZGF0YWJhc2VzL0ZpbGdodHMgVGVjX1ZhbGlkLmNzdiIpDQpgYGANCg0KIyMgVnVlbG9zDQpgYGB7cn0NCmhlYWQodnVlbG9zKQ0Kc3VtbWFyeSh2dWVsb3MpDQpgYGANCg0KYGBge3J9DQp2dWVsb3MkT3JpZ2luX1R5cGUgPSBhcy5mYWN0b3IodnVlbG9zJE9yaWdpbl9UeXBlKQ0KdnVlbG9zJERlc3RpbmF0aW9uX1R5cGUgPSBhcy5mYWN0b3IodnVlbG9zJERlc3RpbmF0aW9uX1R5cGUpDQojVmVyIHNpIGVsaW1pbmFyIGVsIHJlZ2lzdHJvICIiDQpgYGANCg0KIyMjIENhbmNlbGFjacOzbiBkZSBsb3MgdnVlbG9zDQpgYGB7cn0NCnZ1ZWxvcyRSZWFsaXphZG8gPC0gaWZlbHNlKGlzLm5hKHZ1ZWxvcyRQYXNzZW5nZXJzKSwgMSwgMCkNCnZ1ZWxvcyRSZWFsaXphZG8gPSBhcy5mYWN0b3IodnVlbG9zJFJlYWxpemFkbykNCmBgYA0KDQojIyMgVmFyaWFibGVzIERpYS9GZWNoYQ0KYGBge3J9DQojIyMgU2FsaWRhcw0KdnVlbG9zJFNURCA8LSBhcy5QT1NJWGN0KHZ1ZWxvcyRTVEQsIGZvcm1hdCA9ICIlWS0lbS0lZCAlSDolTTolUyIsIG5hLnJtID0gVFJVRSkNCnZ1ZWxvcyRTVERfZmVjaGEgPC0gYXMuRGF0ZSh2dWVsb3MkU1REKQ0KdnVlbG9zJFNURF9ob3JhIDwtIGZvcm1hdCh2dWVsb3MkU1RELCAiJUg6JU06JVMiKQ0KDQp2dWVsb3MkU1RBIDwtIGFzLlBPU0lYY3QodnVlbG9zJFNUQSwgZm9ybWF0ID0gIiVZLSVtLSVkICVIOiVNOiVTIiwgbmEucm0gPSBUUlVFKQ0KdnVlbG9zJFNUQV9mZWNoYSA8LSBhcy5EYXRlKHZ1ZWxvcyRTVEEpDQp2dWVsb3MkU1RBX2hvcmEgPC0gZm9ybWF0KHZ1ZWxvcyRTVEEsICIlSDolTTolUyIpDQoNCnZ1ZWxvcyRkaWZlcmVuY2lhX2hvcmFzIDwtIGFzLm51bWVyaWMoZGlmZnRpbWUodnVlbG9zJFNUQSwgdnVlbG9zJFNURCwgdW5pdHMgPSAiaG91cnMiKSkNCnZ1ZWxvcyRkaWZlcmVuY2lhX21pbnV0b3MgPC0gdnVlbG9zJGRpZmVyZW5jaWFfaG9yYXMgKiA2MA0KDQp2dWVsb3MkU1REX0RpYV9kZWxfbWVzIDwtIGRheSh2dWVsb3MkU1REX2ZlY2hhKQ0KdnVlbG9zJFNURF9NZXMgPC0gbW9udGgodnVlbG9zJFNURF9mZWNoYSwgbGFiZWwgPSBUUlVFKQ0KdnVlbG9zJFNURF9Bw7FvIDwtIHllYXIodnVlbG9zJFNURF9mZWNoYSkNCg0KdnVlbG9zJFNUQV9EaWFfZGVsX21lcyA8LSBkYXkodnVlbG9zJFNUQV9mZWNoYSkNCnZ1ZWxvcyRTVEFfTWVzIDwtIG1vbnRoKHZ1ZWxvcyRTVEFfZmVjaGEsIGxhYmVsID0gVFJVRSkNCnZ1ZWxvcyRTVEFfQcOxbyA8LSB5ZWFyKHZ1ZWxvcyRTVEFfZmVjaGEpDQpgYGANCg0KIyMjIFBvcmNlbnRhamVzDQpgYGB7cn0NCnZ1ZWxvcyA8LSB2dWVsb3MgJT4lDQogIG11dGF0ZShQb3JjZW50YWplX0NhcGFjaWRhZCA9IChQYXNzZW5nZXJzIC8gQ2FwYWNpdHkpICogMTAwLA0KICAgICAgICAgUG9yY2VudGFqZV9SZXNlcnZhcyA9IChCb29raW5ncy9DYXBhY2l0eSkqMTAwKQ0KYGBgDQoNCiMjIyBKb2luIA0KYGBge3J9DQpkZiA8LSB2dWVsb3MgJT4lIA0KICBsZWZ0X2pvaW4odmVudGFzLCBieSA9ICJGbGlnaHRfSUQiKQ0KYGBgDQoNCiMjIFZlbnRhcyANCg0KDQoNCg0KDQo=</div>
 
 
 </div>
@@ -1852,11 +2279,6 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
-<script>
-$(document).ready(function () {
-  window.initializeSourceEmbed("Viva_limpieza.Rmd");
-});
-</script>
 
 <script>
 $(document).ready(function ()  {
