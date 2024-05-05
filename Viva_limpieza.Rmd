@@ -117,7 +117,8 @@ vuelos_alt <- vuelos %>%
   filter(DepartureStation != "")%>%
   filter(ArrivalStation != "")%>%
   filter(Origin_Type != "")%>%
-  filter(Destination_Type != "")
+  filter(Destination_Type != "")%>%
+  filter(STD_Año != 2025)
 ```
 
 ```{r}
@@ -437,35 +438,24 @@ ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
 head(ventas)
 ```
 
+
+```{r}
+ventas_alt <- ventas %>%
+  filter(Type != "Servicios") %>%
+  filter(ProductType!= "Specials")%>%
+  filter(ProductType != "Combos Crew")%>%
+  filter(ProductType != "Ofertas")%>%
+```
+
+```{r}
+ventas_alt <- ventas_alt %>%
+  dplyr::select(-TotalSales)
+```
+
 ### Join 
 ```{r}
 df <- vuelos_alt %>% 
   left_join(ventas, by = "Flight_ID")
-```
-
-
-## Correciones base
-```{r}
-df_alt <- df %>%
-  filter(Type != "Servicios") %>%
-  filter(ProductType!= "Specials")%>%
-  filter(STD_Año != 2024)%>%
-  filter(ProductType != "Combos Crew")%>%
-  filter(ProductType != "Ofertas")%>%
-  filter(diferencia_horas < 15)%>%
-  filter(DepartureStation != "")%>%
-  filter(ArrivalStation != "")%>%
-  filter(Origin_Type != "")%>%
-  filter(Destination_Type != "")
-```
-
-```{r}
-df_alt <- df_alt %>%
-  dplyr::select(-Aeronave, -TotalSales)
-```
-
-```{r}
-df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
 ```
 
 ```{r}
