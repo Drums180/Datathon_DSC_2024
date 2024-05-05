@@ -478,7 +478,7 @@ df <- vuelos_alt %>%
 ## Correciones base
 ```{r}
 df_alt <- df %>%
-  filter(Type != "Servicios") %>%
+  filter(Type != "Servicio") %>%
   filter(ProductType!= "Specials")%>%
   filter(STD_Año != 2024)%>%
   filter(ProductType != "Combos Crew")%>%
