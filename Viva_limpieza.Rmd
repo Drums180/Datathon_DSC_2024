@@ -84,7 +84,7 @@ vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
 vuelos$STD <- as.POSIXct(vuelos$STD, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
 vuelos$STD_fecha <- as.Date(vuelos$STD)
 vuelos$STD_hora <- format(vuelos$STD, "%H:%M:%S")
-df_alt <- df_alt %>%
+vuelos <- vuelos %>%
   mutate(
     STD_hora = hour(hms(STD_hora)) * 60 + minute(hms(STD_hora))
   )
@@ -101,11 +101,7 @@ vuelos$STD_Dia_del_mes <- day(vuelos$STD_fecha)
 vuelos$STD_Mes <- month(vuelos$STD_fecha, label = TRUE)
 vuelos$STD_Año <- year(vuelos$STD_fecha)
 
-vuelos$STD_DiaSemana <- weekdays(vuelos$STD_fecha)
-vuelos$STA_DiaSemana <- weekdays(vuelos$STA_fecha)
-dias_semana <- c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
-vuelos$STD_DiaSemana <- match(vuelos$STD_DiaSemana, dias_semana)
-vuelos$STA_DiaSemana <- match(vuelos$STA_DiaSemana, dias_semana)
+vuelos$STD_DiaSemana <- wday(vuelos$STD_fecha)
 ```
 
 ### Porcentajes
@@ -124,7 +120,8 @@ vuelos_alt <- vuelos %>%
   filter(DepartureStation != "")%>%
   filter(ArrivalStation != "")%>%
   filter(Origin_Type != "")%>%
-  filter(Destination_Type != "")
+  filter(Destination_Type != "")%>%
+  filter(STD_Año != 2025)
 ```
 
 
@@ -441,35 +438,24 @@ ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
 head(ventas)
 ```
 
+
+```{r}
+ventas_alt <- ventas %>%
+  filter(Type != "Servicios") %>%
+  filter(ProductType!= "Specials")%>%
+  filter(ProductType != "Combos Crew")%>%
+  filter(ProductType != "Ofertas")
+```
+
+```{r}
+ventas_alt <- ventas_alt %>%
+  dplyr::select(-TotalSales)
+```
+
 ### Join 
 ```{r}
 df <- vuelos_alt %>% 
   left_join(ventas, by = "Flight_ID")
-```
-
-
-## Correciones base
-```{r}
-df_alt <- df %>%
-  filter(Type != "Servicios") %>%
-  filter(ProductType!= "Specials")%>%
-  filter(STD_Año != 2024)%>%
-  filter(ProductType != "Combos Crew")%>%
-  filter(ProductType != "Ofertas")%>%
-  filter(diferencia_horas < 15)%>%
-  filter(DepartureStation != "")%>%
-  filter(ArrivalStation != "")%>%
-  filter(Origin_Type != "")%>%
-  filter(Destination_Type != "")
-```
-
-```{r}
-df_alt <- df_alt %>%
-  dplyr::select(-Aeronave, -TotalSales)
-```
-
-```{r}
-df_alt$ruta <- paste(df_alt$DepartureStation, df_alt$ArrivalStation)
 ```
 
 paste del departure station y destination type
