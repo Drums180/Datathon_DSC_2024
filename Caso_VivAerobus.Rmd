@@ -743,8 +743,12 @@ months <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"
 V_train$STD_Mes <- match(V_train$STD_Mes, months)
 V_test$STD_Mes <- match(V_test$STD_Mes, months)
 
+# Convertir la columna de horas a numérico
+V_train$STD_hora <- as.numeric(V_train$STD_hora)
+V_test$STD_hora <- as.numeric(V_test$STD_hora)
+
 # Lista de variables a incluir en el modelo
-numeric_vars <- c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STA_Dia_del_mes")
+numeric_vars <- c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STD_Dia_del_mes")
 
 # Preparar los datos para XGBoost
 dtrain <- xgb.DMatrix(data = as.matrix(V_train[numeric_vars]), label = V_train$Passengers)
@@ -815,7 +819,7 @@ values_xgb <- c(RMSE_xgb, MAPE_xgb)
 
 # Crear el dataframe combinando los valores y las métricas
 TablaComparacion <- data.frame(
-  Metrica = rep(metricas, each = 8),  
+  Metrica = metricas,  
   OLS1 = values_ols1,
   OLS2 = values_ols2,
   OLS3 = values_ols3,
@@ -837,6 +841,7 @@ En este paso final, se utilizan los modelos entrenados para hacer predicciones s
 ```{r}
 # Left join con personas_capacidad
 vuelos_predict <- left_join(vuelos_predict, personas_capacidad, by = "Capacity")
+vuelos_predict$STD_hora <- as.numeric(vuelos_predict$STD_hora)
 
 # Left join con destino_capacidad
 vuelos_predict <- left_join(vuelos_predict, destino_capacidad, by = "Destination_Type")
@@ -844,7 +849,7 @@ vuelos_predict <- left_join(vuelos_predict, destino_capacidad, by = "Destination
 vuelos_predict$STD_Mes <- match(vuelos_predict$STD_Mes, months)  # Asegurarse de que los meses estén en el mismo formato que se utilizó para el modelo
 
 # Crear la matriz de datos para XGBoost
-d_predict <- xgb.DMatrix(data = as.matrix(vuelos_predict[c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STA_Dia_del_mes")]))
+d_predict <- xgb.DMatrix(data = as.matrix(vuelos_predict[c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STD_Dia_del_mes")]))
 
 # Realizar predicciones para vuelos_predict
 pred_xgb_vuelos_predict <- predict(xgb_model, d_predict)
