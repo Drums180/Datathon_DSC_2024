@@ -124,11 +124,50 @@ vuelos_alt <- vuelos %>%
   filter(DepartureStation != "")%>%
   filter(ArrivalStation != "")%>%
   filter(Origin_Type != "")%>%
-  filter(Destination_Type != "")
+  filter(Destination_Type != "")%>%
+  filter(STD_Año != 2025)
+```
+
+```{r}
+vuelos_predict <- vuelos %>%
+  filter(STD_Año != 2023)%>%
+  filter(STD_Mes == "Jan")%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")%>%
+  filter(STD_Año != 2025)
+
+vuelos_predict <- vuelos_predict %>%
+  mutate(
+    STD_hora = hour(hms(STD_hora))
+  )
+```
+
+
+```{r}
+vuelos_alt <- vuelos_alt %>%
+  dplyr::select(-Aeronave)
 ```
 
 ```{r}
 vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
+
+vuelos_alt <- vuelos_alt %>%
+  mutate(
+    STD_hora = hour(hms(STD_hora))
+  )
+```
+
+
+## Export Databases
+```{r}
+# Exportar vuelos_alt a databases/Vuelos_Alt.csv
+write.csv(vuelos_alt, file = "databases/Vuelos_Alt.csv", row.names = FALSE)
+
+# Exportar vuelos_predict a databases/Vuelos_2024.csv
+write.csv(vuelos_predict, file = "databases/Vuelos_2024.csv", row.names = FALSE)
 ```
 
 ## Ventas 
@@ -151,10 +190,6 @@ valores_corregidos <- c("Botanas", "Licores", "Vivabus", "Transportaciones CUN",
 
 # Reemplazar los valores en el conjunto de datos
 ventas$ProductType <- factor(ventas$ProductType, levels = unicos_ProductType, labels = valores_corregidos)
-
-# Verificar que los valores se hayan reemplazado correctamente
-print("Valores únicos corregidos para ProductType:")
-print(unique(ventas$ProductType))
 ```
 
 ### Corrección ProductName
@@ -381,10 +416,6 @@ valores_corregidos <- c("Carne Seca Habanero",
                         "Taxi Zihuatanejo Zona 2 - 3pax",
                         "Taxi Cdmx- Interlomas_Bosque-Real",
                         "Taxi Huatulco Mazunte/Zipolite 3pax")
-
-# Verificar que los valores corregidos estén bien
-#print("Valores corregidos para ProductName:")
-#print(valores_corregidos)
 ```
 
 ### Columna Type (Servicio - Fisico)
