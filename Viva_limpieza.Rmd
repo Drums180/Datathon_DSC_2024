@@ -10,7 +10,7 @@ output:
     highlight: pygments
 ---
 
-![](/Users/david3/Desktop/Datathon_DSC_2024/viva-aerobus.jpg)
+![](viva-aerobus.jpg)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
