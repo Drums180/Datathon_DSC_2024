@@ -76,6 +76,7 @@ capacity = 280
 mes = "oct"
 dia_sem = 5
 Dmes = 17
+Dfmin = 160
 ```
 
 ```{r}
@@ -86,7 +87,7 @@ aeropasajeros <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
 ```
 
 ```{r}
-aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
+aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin) {
   resultados_df <- data.frame()
   
   for (i in 1:nrow(mdm_productos)) {
@@ -138,7 +139,8 @@ aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
     ventas_totales_producto_hora = totales_hora,
     ventas_promedio_producto_hora = promedio_hora,
     ventas_totales_producto_ruta = totales_ruta,
-    ventas_promedio_producto_ruta = promedio_ruta
+    ventas_promedio_producto_ruta = promedio_ruta,
+    diferencia_minutos = Dfmin
     )
 
     # Hacer la predicción
@@ -161,7 +163,7 @@ aeroventas <- function(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes) {
   return(resultados_df)
 }
 
-aa = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes)
+aa = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin)
 print(aa)
 ```
 
