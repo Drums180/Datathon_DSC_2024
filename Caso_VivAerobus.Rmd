@@ -1,0 +1,1071 @@
+---
+title: "Caso_Viva_Aerobus"
+author: "Omega Datalords"
+date: "2024-05-05"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    code_download: TRUE
+    theme: cosmo
+---
+
+# **Viva Aerobus: Optimización y Predicción a Bordo**
+
+## **Introducción**
+
+**El presente documento detalla el proceso y los resultados del reto Datathon 2024**, llevado a cabo por el equipo de Omega. Este reto se centra en la creación de un **modelo predictivo y de optimización para la venta a bordo de Viva Aerobus**, con el objetivo principal de optimizar el abastecimiento de productos, especialmente los perecederos, para reducir el desperdicio y evitar la pérdida de ventas por insuficiencia de inventario.
+
+### Problemática
+
+La gestión eficiente del inventario a bordo es crucial para una aerolínea como **Viva Aerobus**, que busca maximizar sus ingresos mientras mejora la experiencia del cliente. **Los desafíos incluyen el manejo de productos con alta variabilidad en la demanda** debido a factores como el horario del vuelo, la temporada, el factor de ocupación, y el origen/destino del vuelo. Adicionalmente, es esencial prevenir tanto el exceso de inventario que conduce al desperdicio de alimentos, como la escasez que resulta en ventas perdidas.
+
+### ¿Quién es Viva Aerobus?
+
+**Viva Aerobus** es una **aerolínea de bajo costo con base en México**, conocida por su modelo de negocio eficiente y enfocado en la optimización de costos. Ofrece vuelos a múltiples destinos dentro de México, así como algunos internacionales, y se destaca por su enfoque en la **eficiencia operativa y la satisfacción del cliente** a través de servicios adicionales competitivos.
+
+### Objetivos del Proyecto
+
+El proyecto tiene como objetivos específicos:
+
+1. **Desarrollar un modelo predictivo de ventas por vuelo**, con un enfoque particular en productos perecederos.
+2. **Implementar un modelo de optimización de cargas de productos** para reducir la frecuencia y cantidad de reabastecimiento.
+3. **Proporcionar recomendaciones basadas en análisis de datos** para la toma de decisiones estratégicas en cuanto al abastecimiento de productos.
+
+Este documento expone los métodos utilizados para el análisis, la construcción del modelo, y los resultados obtenidos, proporcionando así una **base sólida para decisiones operativas y estratégicas** en Viva Aerobus.
+
+## **Limpieza y Transformación**
+
+### Librerias Necesarias
+En este segmento se cargan las librerías necesarias para la manipulación, visualización y análisis de los datos. `dplyr` se utiliza para la manipulación de datos, `ggplot2` y `plotly` para visualización, `readxl` y `readr` para la lectura de datos, entre otros paquetes que soportan diversas funciones de análisis estadístico y de machine learning como `randomForest` y `caret`.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(lubridate)
+library(purrr)
+library(plotly)
+library(forecast)
+library(readxl)
+library(DataExplorer)
+library(dplyr)
+library(ggplot2)
+library(tm)
+library(wordcloud)
+library(cluster)
+library(factoextra)
+library(gridExtra)
+library(purrr)
+library(pROC)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+library(ggpubr)
+library(dlookr)
+library(zoo)
+library(caret)
+library(stats)
+library(tseries)
+library(readr)
+library(vars)
+library(syuzhet)
+library(kableExtra)
+library(plotly)
+library(scales)
+library(readxl)
+library(car)
+library(Metrics)
+library(randomForest)
+library(xgboost)
+library(vip)
+library(neuralnet)
+```
+
+### Bases de Datos
+Se cargan dos conjuntos de datos fundamentales: `ventas`, que incluye información sobre las ventas realizadas a bordo, y `vuelos`, que contiene detalles sobre cada vuelo operado por Viva Aerobus. Estas bases de datos son esenciales para desarrollar los modelos de predicción y optimización.
+
+Glosario de Variables:
+
+- `Flight_ID`: Identificador único por vuelo.
+- `Aircraft_ID`: Identificador único por aeronave.
+- `DepartureStation`: Código IATA del aeropuerto de origen.
+- `ArrivalStation`: Código IATA del aeropuerto de destino.
+- `STD`: Timestamp de salida del vuelo.
+- `STA`: Timestamp de llegada del vuelo.
+- `Passengers`: Total de pasajeros volados.
+- `Bookings`: Total de reservas en el vuelo.
+- `Capacity`: Capacidad real del avión.
+
+Estas variables permiten un análisis detallado sobre el comportamiento de los vuelos y las ventas, facilitando la creación de modelos predictivos más precisos y efectivos.
+
+```{r}
+ventas = read.csv("databases/Sales Tec_Valid.csv")
+vuelos = read.csv("databases/Filghts Tec_Valid.csv")
+```
+
+### Dataset Vuelos
+
+#### Tipo de dato
+Ajuste de tipos de datos para las columnas Origin_Type y Destination_Type en el dataframe vuelos para asegurar que sean tratadas como factores, lo cual es importante para las modelaciones y agrupaciones posteriores en el análisis.
+
+```{r}
+vuelos$Origin_Type = as.factor(vuelos$Origin_Type)
+vuelos$Destination_Type = as.factor(vuelos$Destination_Type)
+```
+
+#### Variables Dia/Fecha
+Transformación de las columnas de fecha y hora para separar la fecha y la hora específica, facilitando análisis más detallados por segmentos de tiempo. Además, se calcula la duración de cada vuelo en horas y minutos, y se extraen componentes como el día, mes y año para análisis temporales más detallados.
+
+```{r}
+# Se le brindó el formato correcto de fecha y hora de las columnas que lo requieran para separarlas según su fecha y su hora específica
+vuelos$STD <- as.POSIXct(vuelos$STD, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
+vuelos$STD_fecha <- as.Date(vuelos$STD)
+vuelos$STD_hora <- format(vuelos$STD, "%H")
+
+vuelos$STA <- as.POSIXct(vuelos$STA, format = "%Y-%m-%d %H:%M:%S", na.rm = TRUE)
+vuelos$STA_fecha <- as.Date(vuelos$STA)
+vuelos$STA_hora <- format(vuelos$STA, "%H:%M:%S")
+
+# Después se calculó la diferencia entre la hora de salida y hora de llegada para tener la duración de cada vuelo en horas y se multiplicó por 60 para tener ese mismo calculo en minutos
+vuelos$diferencia_horas <- as.numeric(difftime(vuelos$STA, vuelos$STD, units = "hours"))
+vuelos$diferencia_minutos <- vuelos$diferencia_horas * 60
+
+# A partir de la fecha individual, se segmentó esa variable según su día, mes y año
+vuelos$STD_Dia_del_mes <- day(vuelos$STD_fecha)
+vuelos$STD_Mes <- month(vuelos$STD_fecha, label = TRUE)
+vuelos$STD_Año <- year(vuelos$STD_fecha)
+
+vuelos$STD_DiaSemana <- wday(vuelos$STD_fecha)
+```
+
+#### Porcentajes
+Cálculo del porcentaje de capacidad y reservas para cada vuelo, proporcionando una métrica de qué tan lleno estaba cada avión y cuántas de las plazas fueron reservadas previamente. Esto es clave para entender la demanda y optimizar el inventario basado en estas métricas.
+
+```{r}
+# Se realizó el calculo del porcentaje de capacidad de cada vuelo, que indica qué tan lleno iba cada avión y la porción de la capacidad que fue realizada a partir de una reservación
+vuelos$Passengers <- ifelse(vuelos$Passengers > vuelos$Capacity, vuelos$Capacity, vuelos$Passengers)
+
+vuelos <- vuelos %>%
+  mutate(Porcentaje_Capacidad = (Passengers / Capacity) * 100,
+         Porcentaje_Reservas = (Bookings/Capacity)*100)
+```
+
+#### Recorte de Dataset
+Filtrado del dataset vuelos para eliminar registros no relevantes o atípicos del análisis, como vuelos fuera del año de interés o aquellos con duraciones extremas. Este paso es crucial para asegurar la calidad y relevancia de los datos en el análisis.
+
+```{r}
+# Aplicamos un filtro para remover los registros que no fueran del 2023 y quitar algunos registros que no contenían información pero que no eran clasificados como NA
+vuelos_alt <- vuelos %>%
+  filter(STD_Año != 2024)%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")%>%
+  filter(STD_Año != 2025)
+```
+
+```{r}
+# Eliminamos la variable de la Aeronave porque no es significativa para los resultados de las predicciones del modelo
+vuelos_alt <- vuelos_alt %>%
+  dplyr::select(-Aeronave)
+```
+
+```{r}
+# Unimos las variables del destino de origen y de salida para crear un indicador para cada ruta realizada por los aviones y, de nuevo, se identifica únicamente la hora de salida de cada vuelo
+vuelos_alt$ruta <- paste(vuelos_alt$DepartureStation, vuelos_alt$ArrivalStation)
+```
+
+#### Dataset Predicciones Pasajeros
+Preparación de un dataset específico para realizar predicciones sobre los pasajeros en vuelos de enero del 2024. Este filtrado es crucial para focalizar el modelo predictivo en un conjunto de datos controlado y relevante.
+
+```{r}
+# En una variable diferente, que será utilizada para realizar las predicciones, se filtró la base de datos original para incluir únicamente los registros de enero del 2024 que hayan durado menos de 15 horas para evitar sesgos aplicados por datos atípicos
+vuelos_predict <- vuelos %>%
+  filter(STD_Año != 2023)%>%
+  filter(STD_Mes == "Jan")%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")%>%
+  filter(STD_Año != 2025)
+```
+
+### Dataset Ventas
+
+#### Limpieza de Texto en Productos
+En este bloque se realiza una limpieza inicial de los datos de los productos, asegurando que las categorías y nombres de los productos estén estandarizados. Se obtienen valores únicos de las columnas `ProductType` y `ProductName`. Luego, se utilizan vectores de valores corregidos para reemplazar y homogeneizar las entradas en estos campos, facilitando análisis futuros y la integridad de los datos.
+
+```{r}
+# Obtener valores únicos para las columnas ProductType y ProductName
+unicos_ProductType <- unique(ventas$ProductType)
+unicos_ProductName <- unique(ventas$ProductName)
+```
+
+```{r}
+# Crear un vector con los valores corregidos
+valores_corregidos <- c("Botanas", "Licores", "Vivabus", "Transportaciones CUN", "Galletas",
+                        "Specials", "Bebidas Calientes", "Combos Crew", "Hertz", "Ofertas",
+                        "Transportaciones MTY", "Transportaciones TLC", "Viva Play", "Viva Taxis",
+                        "Antros", "Viva Transfer", "Alimentos Charter", "Perecederos", "Refrescos",
+                        "Sopas", "Lacteos")
+
+# Reemplazar los valores en el conjunto de datos
+ventas$ProductType <- factor(ventas$ProductType, levels = unicos_ProductType, labels = valores_corregidos)
+```
+
+```{r}
+# Crear un vector con los valores corregidos sin acentos
+valores_corregidos <- c("Carne Seca Habanero",
+                        "Jw Red Label",
+                        "Jack And Coke",
+                        "Jw Red Label",
+                        "Vivabus Gdl.-Nvo. C. Camionera",
+                        "Ron Bacardi",
+                        "Baileys",
+                        "Corajillo",
+                        "Transfer Cun: Zona Hotelera Sencillo",
+                        "Muffin Integral",
+                        "Tequila 7 Leguas Reposado",
+                        "Arandano Mango Mix",
+                        "Quaker Granola",
+                        "Tequila 7 Leguas Blanco",
+                        "Combo Cheve + Carne",
+                        "Sol Clamato",
+                        "Tequila + Mezclador",
+                        "Quaker Avena Frutos Rojos",
+                        "Go Nuts",
+                        "Arandano",
+                        "Combo Vino",
+                        "Tinto",
+                        "Nutty Berry Mix",
+                        "Promo Amstel",
+                        "Frutos Secos Enchilados",
+                        "Vivabus Cancun: Playa Del Carmen (Sencillo)",
+                        "Te Relax",
+                        "Dip De Queso",
+                        "Crea Combo Crew 1",
+                        "Te Frutos Rojos",
+                        "Ultra Seltzer Frambuesa",
+                        "Corajillo Baileys",
+                        "Vivabus Monterrey: Central",
+                        "Vino Tinto Cria Cuervos",
+                        "Cat.C.Com",
+                        "Capitan Morning Con Pan Dulce",
+                        "Te Manzanilla Jengibre",
+                        "Apto Cun-Centro/Hoteles/Pto Juarez 1 A 6 Redondo",
+                        "Baileys",
+                        "Vivabus:Shuttle Apto.-Centro Tul.(Sencillo)",
+                        "Nueces De Arbol Mix",
+                        "Carne Seca Original",
+                        "Luxury Nut Mix",
+                        "Combo Cheve Doble",
+                        "Botana Sabritas Con Dip De Queso",
+                        "Galleta De Chispas De Chocolate",
+                        "Vivabus Monterrey: Fierro (Y Griega)",
+                        "Tostitos Nachos Con Dip",
+                        "Promo Hsbc 1 Bebida Gratis",
+                        "Protein Adventure",
+                        "Crea Combo Crew 3",
+                        "Vino Blanco Cria Cuervos",
+                        "Hsbc-Viva",
+                        "Galleta De Chocolate",
+                        "Topochico Seltzer Fresa-Guayaba",
+                        "Apto Cun-Centro/Hoteles/Pto Juarez 7 A 12 Redondo",
+                        "Te Vainilla",
+                        "Apto Cun-Centro/Hoteles/Pto Juarez 1 A 6 Sencillo",
+                        "Zona-5 Sanpedro 4pax",
+                        "Tulum Redondo 6 Pax",
+                        "Combo Snack + Hsbc-Viva",
+                        "Transfer Tlc: Aeropuerto A Observatorio",
+                        "Cafe De Olla",
+                        "Zona-3 Centro Mty 4pax",
+                        "Cat.L.",
+                        "Vivaplay",
+                        "Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres-Priv-Sencillo",
+                        "Galleta De Arandano Relleno De Q/Crema",
+                        "Vivabus Cancun: Playa Del Carmen (Redondo)",
+                        "Salsa Botanera",
+                        "Cat.A.Subc",
+                        "Cat.D.Sdn",
+                        "Coco Bongo Playa",
+                        "Zona-4 Tec-Mty 4pax",
+                        "Taxi Cdmx - Santa Fe",
+                        "Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres Priv-Redondo 6",
+                        "Aifa A Central Taxquena",
+                        "Zona-2 San Nicolas 4pax",
+                        "Transfer Leon: Central.Puerta Milenio Mega Centro.Poliforum",
+                        "Hsbc Promo 1c",
+                        "Apto Cun Puerto-Morelos-Sencillo 1 A 6  Paxs",
+                        "Apto Cun Puerto-Morelos-Sencillo 7 A 12",
+                        "Cafe 19 Cafe Clasico",
+                        "Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujerespriv-Sencillo 1",
+                        "Zona-1 Apodaca 4pax",
+                        "Apto.Gdl.-Terminal Zapopan",
+                        "Guanajuato :Bjx A Central De Autobuses",
+                        "Coco Bongo Cancun Apartado",
+                        "Crea Combo Crew 2",
+                        "Coco Bongo Full Pack",
+                        "Aifa  A Central Del Norte",
+                        "Transfer Tlc: Tollocan A Aicm",
+                        "Tulum Sencillo 6 Pax",
+                        "Zona-2 San Nicolas 10pax",
+                        "Apto Cun Puerto-Morelos-Redondo7 A 12",
+                        "Combo Cheve + Hsbc-Viva",
+                        "Apto Cun-Centro/Hoteles/Pto Juarez 12paxs Sencillo",
+                        "Charter Cheve Doble",
+                        "Taxi Tlc: Centro",
+                        "Cancun Plaza Las Americas Sencillo",
+                        "Tulum Redondo 12 Pax",
+                        "Apto Cun Puerto-Morelos-Redondo 1 A 6  Paxs",
+                        "Transfer Tlc: Tollocan A Santa Fe",
+                        "Silao:Bjx A Central De Autobuses",
+                        "Transfer Tlc: Aeropuerto A Tollocan",
+                        "Hoteles Pdc. Playa Car. Costa Mujeres O Playa Mujeres Priv-Redondo 1",
+                        "Taxi Acapulco Zona Dorada 3 Pax",
+                        "Combovivaplay2",
+                        "Licor Charter",
+                        "Quaker Avena Moras",
+                        "Combo Vino Cria Cuervos",
+                        "Taxi Cdmx A Polanco-Angel Independencia.",
+                        "Quaker Natural Balance",
+                        "San Miguel De Allende:Bjx A Central De Autobuses",
+                        "Zona-6 Sancatarina 4pax",
+                        "Akumal O Puerto Aventuras Sencillo 12 Pax",
+                        "Akumal O Puerto Aventura Sencillo 6 Pax",
+                        "Taxi Tlc: Robles. Ocoyoacac",
+                        "Transfer Cjs: Centro De El Paso",
+                        "Cuerno Individual Charter",
+                        "Combo Stl",
+                        "Eco Holder",
+                        "Akumal O Puerto Aventuras Redondo 6 Pax",
+                        "Taxi Cdmx - Aeropuerto",
+                        "Zona-4 Tec-Mty 10pax",
+                        "Transfer Tlc: Aeropuerto A Cuautitlan",
+                        "Zona-5 Sanpedro 10pax",
+                        "Transfer Cjs : Aeropuerto De El Paso",
+                        "Taxi Veracruz-Boca Rio-6pax",
+                        "Taxi Veracruz-Boca Rio-4pax",
+                        "Zona-1 Apodaca 10pax",
+                        "Cerveza Charter",
+                        "Maxi Combo",
+                        "Zona-3 Centro Mty 10pax",
+                        "Taxi Cdmx - Sur. Norte",
+                        "Akumal O Puerto Aventuras Redondo 12 Pax",
+                        "Taxi Huatulco Puerto Escondido 3pax",
+                        "Charter Licor Doble",
+                        "Chokis",
+                        "Sprite",
+                        "Cheetos",
+                        "Arcoiris",
+                        "Tostitos",
+                        "Xx Lager",
+                        "Xx Ultra",
+                        "Cafe Costa",
+                        "Nissin Res",
+                        "Combo Cheve",
+                        "Combo Snack",
+                        "Hazme Doble",
+                        "Rancheritos",
+                        "Super Combo",
+                        "Amstel Ultra",
+                        "Nissin Fuego",
+                        "Tecate Light",
+                        "Doritos Nacho",
+                        "Jugo De Mango",
+                        "Mafer Sin Sal",
+                        "Ruffles Queso",
+                        "Sidral Mundet",
+                        "Combo Aventura",
+                        "Nissin Picante",
+                        "Panini Clasico",
+                        "Cafe 19 Chiapas",
+                        "Capitan Morning",
+                        "Coca Cola Dieta",
+                        "Coca Sin Azucar",
+                        "Heineken Silver",
+                        "Jugo De Manzana",
+                        "Panini Integral",
+                        "Fanta De Naranja",
+                        "Licor + Refresco",
+                        "Nishikawa Salado",
+                        "Cafe 19 Capuchino",
+                        "Ciel Mineralizada",
+                        "Coca Cola Regular",
+                        "Heineken Original",
+                        "Combocine1",
+                        "Combovivaplay3",
+                        "Nissin Limon Y Habanero",
+                        "Heineken 0",
+                        "Taxi Tlc: Sendero",
+                        "Taxi Tlc: Central. San Mateo",
+                        "Taxi Zihuatanejo Zona 1-3pax",
+                        "Combo Cheve Doble + Carne",
+                        "Transfer Cjs: Consulado Americano",
+                        "Tulum Sencillo 12 Pax",
+                        "Taxi Cabos Zona 3 4pax",
+                        "Zona-6 Sancatarina 10pax",
+                        "Taxi Cabos Zona 1 4pax",
+                        "Taxi Cdmx - Observatorio",
+                        "Gomita Enchilada La Cueva",
+                        "Mega Cuerno Tripulacion",
+                        "Club Sandwich",
+                        "Taxi Cdmx - Centro.",
+                        "Combo Licor Charter",
+                        "Cheve+Carne+Hsbc",
+                        "Taxi Cabos Zona 2 4pax",
+                        "Kacang Flaming Hot",
+                        "Taxi Tlc: Zona Industial",
+                        "Combo Healthy Crew",
+                        "Leche De Fresa Sc",
+                        "Nishikawa Japones",
+                        "Super Combo Doble",
+                        "Cheetos Flamin Hot",
+                        "Emperador Vainilla",
+                        "Fritos Limon Y Sal",
+                        "Nissin Dark Dragon",
+                        "Agua Natural 600 Ml",
+                        "Emperador Chocolate",
+                        "Mega Cuerno Clasico",
+                        "Sabritas Flamin Hot",
+                        "Sabritas Originales",
+                        "Leche De Chocolate Sc",
+                        "Cuerno Clasico De Pavo",
+                        "Topochico Seltzer Mango",
+                        "Combo Snack Con Frubotana",
+                        "Vino Tinto Sangre De Toro",
+                        "Taxi Zihuatanejo Zona 2 - 3pax",
+                        "Taxi Cdmx- Interlomas_Bosque-Real",
+                        "Taxi Huatulco Mazunte/Zipolite 3pax")
+```
+
+#### Tipos de Productos
+Se clasifican los productos en dos categorías principales: `Fisico` y `Servicio`, basándose en su naturaleza. Esta clasificación se realiza mediante una función que asigna el tipo de producto según las características específicas listadas. Esta diferenciación es crucial para los análisis subsiguientes que pueden requerir tratamientos distintos según el tipo de producto.
+
+```{r}
+# Definir una función para asignar el tipo según el tipo de producto
+asignar_tipo <- function(producto_tipo) {
+  if (producto_tipo %in% c("Vivabus", "Transportaciones CUN", "Transportaciones MTY", 
+                           "Transportaciones TLC", "Viva Play", "Viva Taxis", 
+                           "Viva Transfer", "Antros")) {
+    return("Servicio")
+  } else {
+    return("Fisico")
+  }
+}
+
+# Aplicar la función a la columna ProductType para crear la nueva columna Type
+ventas$Type <- sapply(ventas$ProductType, asignar_tipo)
+
+# Verificar que se haya creado correctamente la nueva columna
+head(ventas)
+```
+
+#### Partición de los Productos Tangibles
+Se realiza una clasificación más granular de los productos físicos, separándolos en subcategorías como `Perecederos` y `No Perecederos`, y los servicios en subcategorías como `Transporte`, `Entretenimiento`, y `Online`. Esta segmentación ayuda a entender mejor la demanda y las preferencias del consumidor, además de optimizar el inventario y las estrategias de marketing.
+
+```{r message=FALSE, warning=FALSE}
+# Función para asignar el subtipo según el tipo de producto
+asignar_subtipo <- function(producto_tipo, tipo) {
+  if (tipo == "Servicio") {
+    if (producto_tipo %in% c("Viva Transfer", "Viva Taxis", 
+                             "Transportaciones MTY", "Transportaciones CUN", "Vivabus")) {
+      return("Transporte")
+    } else if (producto_tipo %in% c("Antros")) {
+      return("Entretenimiento")
+    } else if (producto_tipo %in% c("Viva Play")) {
+      return("Online")
+    } else {
+      return("Otros Servicios")
+    }
+  } else {
+    if (producto_tipo %in% c("Perecederos", "Alimentos Charter")) {
+      return("Perecederos")
+    } else {
+      return("No Perecederos")
+    }
+  }
+}
+
+# Aplicar la función a las columnas ProductType y Type para crear la nueva columna SubType
+ventas$SubType <- mapply(asignar_subtipo, ventas$ProductType, ventas$Type)
+
+# Verificar que se haya creado correctamente la nueva columna
+#head(ventas)
+```
+
+### Join Maestro
+Integración de las bases de datos de vuelos y ventas mediante el `Flight_ID`. Este paso es fundamental para relacionar los datos de ventas con los vuelos específicos, permitiendo un análisis más detallado sobre cómo los factores del vuelo afectan las ventas.
+
+```{r}
+# Unimos ambas bases de datos según el ID de cada vuelo
+df <- vuelos_alt %>% 
+  left_join(ventas, by = "Flight_ID")
+```
+
+#### Correciones base
+Se aplican filtros para eliminar datos no deseados o irrelevantes, como registros futuros o tipos de productos específicos que no interesan para el estudio actual. Este paso asegura que el análisis se centre en datos relevantes y mejora la precisión del modelo predictivo.
+
+```{r}
+# Aplicamos los filtros de los tipos de productos de los que no nos interesa tener un inventario y eliminamos los registros que sean del 2024, tengan valores vacíos y formen parte de secciones extraordinarias del manú. Ej, Combos, Ofertas
+df_alt <- df %>%
+  filter(Type != "Servicio") %>%
+  filter(ProductType!= "Specials")%>%
+  filter(STD_Año != 2024)%>%
+  filter(ProductType != "Combos Crew")%>%
+  filter(ProductType != "Ofertas")%>%
+  filter(diferencia_horas < 15)%>%
+  filter(DepartureStation != "")%>%
+  filter(ArrivalStation != "")%>%
+  filter(Origin_Type != "")%>%
+  filter(Destination_Type != "")
+```
+
+#### Eliminación de Columnas
+Se eliminan las columnas que no contribuyen al modelo predictivo o análisis, reduciendo la dimensión del dataset y enfocando el análisis en las variables más impactantes.
+
+```{r}
+# Eliminamos las columnas que no serán de utilidad para el modelo
+df_alt <- df_alt %>%
+  dplyr::select(-TotalSales, -Destination_Type, -Origin_Type, -STA_fecha, -STA_hora)
+```
+
+#### Variables de Comportamiento
+Creación de nuevas variables que describen el comportamiento de las ventas de productos según la hora y la ruta. Esto incluye sumarizar ventas totales y promedios por hora y ruta, proporcionando insights sobre los patrones de consumo que pueden optimizar las decisiones de stock y marketing.
+
+```{r}
+# Añadimos cuatro variables que describan el comportamiento de cada producto vendido según especificaciones de su hora y mes de acuerdo con las agrupaciones de registros similares a lo largo de todo el año
+hora_producto <- df_alt %>%
+  group_by(STD_hora, ProductName) %>%
+  summarise(ventas_totales_producto_hora = sum(Quantity),
+            ventas_promedio_producto_hora = mean(Quantity))
+
+df_alt <- left_join(df_alt, hora_producto, by=c("STD_hora","ProductName"))
+
+ruta_producto <- df_alt %>%
+  group_by(ruta, ProductName) %>%
+  summarise(ventas_totales_producto_ruta = sum(Quantity),
+            ventas_promedio_producto_ruta = mean(Quantity))
+
+df_alt <- left_join(df_alt, ruta_producto, by=c("ruta","ProductName"))
+```
+
+#### Reducción de Variables
+Se seleccionan y reajustan las variables finales para el modelo, eliminando información redundante o no relevante y asegurando que los tipos de datos sean los adecuados para los análisis predictivos. También se ajusta el tipo de dato de las variables clave para mantener su funcionalidad en el modelo.
+
+```{r}
+# Eliminamos las columnas que no serán de utilidad en el modelo y cambiamos el tipo de dato del identificador de ruta para que se mantenga como un factor
+df_alt <- df_alt %>%
+  dplyr::select(-Flight_ID, -STD, -STA, -STD_fecha, -diferencia_horas, ProductType, -Type, -SubType, -DepartureStation, -ArrivalStation)
+
+df_alt$ruta <- as.factor(df_alt$ruta)
+```
+
+## **Predicción de Pasajeros**
+
+### Preparación de datos
+
+#### Ruta como Factor
+En este paso, se convierte la variable `ruta` en un factor para utilizarla en los modelos predictivos. Además, se filtran los registros donde los pasajeros son igual a 10, asumiendo que es un valor atípico o error de entrada.
+
+```{r}
+vuelos_alt$ruta <- as.factor(vuelos_alt$ruta)
+
+vuelos_alt <- vuelos_alt %>%
+  filter(Passengers != 10)
+```
+
+#### Creación de Columnas
+Se crean nuevas columnas agregadas como la capacidad total y promedio de pasajeros por capacidad de avión y por tipo de destino. Esto permite entender mejor cómo se distribuyen los pasajeros en función de la capacidad del avión y el tipo de destino, lo cual es útil para optimizar tanto la asignación de aviones como las estrategias de precios.
+
+```{r}
+personas_capacidad <- vuelos_alt %>%
+  group_by(Capacity) %>%
+  summarise(capacidad_total_personas = sum(Passengers),
+            capacidad_promedio_personas = mean(Passengers))
+
+vuelos_alt <- left_join(vuelos_alt, personas_capacidad, by=c("Capacity"))
+
+destino_capacidad <- vuelos_alt %>%
+  group_by(Destination_Type) %>%
+  summarise(capacidad_total_destino = sum(Capacity),
+            capacidad_promedio_destino = mean(Capacity))
+
+vuelos_alt <- left_join(vuelos_alt, destino_capacidad, by=c("Destination_Type"))
+```
+
+#### Cross-Validation
+Configuración de un esquema de validación cruzada para garantizar que el modelo se evalúe de manera justa y robusta. Se divide el conjunto de datos en entrenamiento y prueba para validar la efectividad del modelo y evitar el sobreajuste.
+
+```{r}
+set.seed(123)
+partition <- createDataPartition(y = vuelos_alt$Passengers, p = 0.8, list = F)
+V_train <- vuelos_alt[partition, ]
+V_test <- vuelos_alt[-partition, ]
+```
+
+### Modelos
+#### OLS1
+Modelo de regresión lineal utilizando múltiples predictores como tipo de destino, estación de partida, hora de salida, entre otros. Este modelo sirve como base para comparar la efectividad de modelos más complejos.
+
+```{r}
+ols_model <- lm(Passengers ~ Destination_Type + DepartureStation + STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana + STD_Dia_del_mes, data = V_train)
+summary(ols_model)
+
+pred_ols_model <- predict(ols_model, newdata = V_test)
+RMSE_ols_model <- rmse(V_train$Passengers, pred_ols_model)
+RMSE_ols_model
+```
+
+#### OLS2
+Una segunda versión del modelo de regresión lineal que utiliza un conjunto reducido de variables. Este modelo busca simplificar el primero para verificar si un modelo menos complejo puede mantener una precisión aceptable.
+
+```{r}
+ols_model2 <- lm(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana, data = V_train)
+summary(ols_model2)
+
+pred_ols_model2 <- predict(ols_model2, newdata = V_test)
+RMSE_ols_model2 <- rmse(V_train$Passengers, pred_ols_model2)
+RMSE_ols_model2
+```
+
+```{r}
+vif(ols_model)
+bptest(ols_model)
+```
+
+#### Random Forest
+Implementación de un modelo de Random Forest, conocido por su capacidad para manejar grandes cantidades de datos y variables, y proporcionar estimaciones robustas incluso en presencia de datos no lineales y complejos.
+
+```{r}
+# Ajustar el modelo de Random Forest
+modelo_rf <- randomForest(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + Porcentaje_Reservas + STD_DiaSemana,
+  data = V_train,
+  ntree = 50, # Número de árboles en el bosque
+  mtry = sqrt(ncol(V_train) - 1), # Número de variables en cada división
+  importance = TRUE
+) # Calcular la importancia de las variables
+
+pred_rf <- predict(modelo_rf, newdata = V_test)
+RMSE_rf <- rmse(V_train$Passengers, pred_rf)
+RMSE_rf
+```
+
+#### OLS3
+Una tercera variante del modelo de regresión lineal que incorpora transformaciones logarítmicas y un conjunto diferente de variables. Este modelo busca mejorar la precisión a través de la transformación de variables y la inclusión de nuevos predictores.
+
+```{r}
+ols_model3 <- lm(Passengers ~ DepartureStation + STD_hora + diferencia_horas + Destination_Type + log(Capacity) + STD_Mes + Bookings + STD_Dia_del_mes, data = V_train)
+summary(ols_model3)
+
+pred_ols_model3 <- predict(ols_model3, newdata = V_test)
+RMSE_ols_model3 <- rmse(V_train$Passengers, pred_ols_model3)
+RMSE_ols_model3
+```
+
+#### CART Regressivo
+Modelo de árbol de regresión que segmenta el espacio de datos en subespacios más simples, lo que puede ser especialmente útil para capturar relaciones no lineales y complejas entre las variables.
+
+```{r}
+# Entrenar el modelo CART
+cart_model <- rpart(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + STD_Dia_del_mes + STD_DiaSemana + capacidad_promedio_destino + ruta, data = V_train)
+
+# Analizar la importancia de las variables
+vip(cart_model)
+
+# Trazar el árbol de decisión
+rpart.plot(cart_model, type = 4, extra = 101)
+
+# Realizar predicciones en el conjunto de prueba
+pred_cart <- predict(cart_model, newdata = V_test)
+
+# Calcular RMSE para el modelo CART
+RMSE_cart <- rmse(V_test$Passengers, pred_cart)
+RMSE_cart
+```
+
+#### Neural Network Model
+Un modelo de red neuronal que se utiliza para capturar relaciones complejas entre variables. Las redes neuronales son especialmente útiles para modelar interacciones no lineales y pueden ser altamente personalizables.
+
+```{r}
+# Asegurarse de que todas las columnas utilizadas sean numéricas
+numeric_vars <- c("STD_hora", "diferencia_horas", "STD_Mes", "Capacity", "Porcentaje_Reservas", "STD_DiaSemana", "Passengers")
+
+V_train_nn <- V_train
+V_test_nn <- V_test
+
+V_train_nn[numeric_vars] <- sapply(V_train[numeric_vars], function(x) as.numeric(as.character(x)))
+V_test_nn[numeric_vars] <- sapply(V_test[numeric_vars], function(x) as.numeric(as.character(x)))
+
+# Entrenar el modelo de red neuronal
+nn_model <- neuralnet(Passengers ~ STD_hora + diferencia_horas + Capacity + Porcentaje_Reservas + STD_DiaSemana,
+                      data = V_train_nn,
+                      hidden = c(5),  # Ajusta este valor según sea necesario
+                      linear.output = TRUE,  # Capa de salida lineal para regresión
+                      threshold = 0.01)  # Umbral para la convergencia del entrenamiento
+
+# Realizar predicciones en el conjunto de prueba
+pred_nn <- compute(nn_model, V_test_nn[numeric_vars])
+pred_nn <- pred_nn$net.result
+
+# Calcular RMSE para el modelo de red neuronal
+RMSE_nn <- sqrt(mean((pred_nn - V_test_nn$Passengers)^2))
+print(RMSE_nn)
+```
+
+#### SVM Model
+El modelo de Máquina de Vectores de Soporte (SVM) se utiliza para encontrar el hiperplano que mejor separa los datos en el espacio de características. En este contexto, se utiliza para predecir el número de pasajeros.
+
+```{r}
+# Entrenar el modelo SVM con la muestra reducida
+svm_model <- svm(Passengers ~ STD_hora + diferencia_horas + STD_Mes + Capacity + STD_DiaSemana, data = V_train, kernel = "radial")
+
+# Realizar predicciones en el conjunto de prueba
+pred_svm <- predict(svm_model, newdata = V_test)
+
+# Calcular RMSE para el modelo SVM
+RMSE_svm <- sqrt(mean((pred_svm - V_test$Passengers)^2))
+RMSE_svm
+```
+
+#### XGBoost Model
+Modelo de potenciación del gradiente (XGBoost) que es conocido por su rendimiento superior en muchos problemas de predicción. Este modelo utiliza una técnica de aprendizaje conjunto para mejorar progresivamente las predicciones en series de modelos más simples.
+
+```{r}
+# Crear un vector con los nombres completos de los meses en orden
+months <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+# Convertir la columna de meses en V_train y V_test
+V_train$STD_Mes <- match(V_train$STD_Mes, months)
+V_test$STD_Mes <- match(V_test$STD_Mes, months)
+
+# Lista de variables a incluir en el modelo
+numeric_vars <- c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STA_Dia_del_mes")
+
+# Preparar los datos para XGBoost
+dtrain <- xgb.DMatrix(data = as.matrix(V_train[numeric_vars]), label = V_train$Passengers)
+dtest <- xgb.DMatrix(data = as.matrix(V_test[numeric_vars]), label = V_test$Passengers)
+
+# Parámetros para XGBoost
+params <- list(
+  booster = "gbtree",
+  objective = "reg:squarederror",
+  eta = 0.3,
+  gamma = 0,
+  max_depth = 6,
+  min_child_weight = 1,
+  subsample = 1,
+  colsample_bytree = 1
+)
+
+# Entrenamiento del modelo
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 500,  # Número de rondas de boosting
+  watchlist = list(eval = dtrain, test = dtest),
+  print_every_n = 100,
+  early_stopping_rounds = 10,
+  maximize = FALSE
+)
+
+# Realizar predicciones
+pred_xgb <- predict(xgb_model, dtest)
+
+# Calcular RMSE
+RMSE_xgb <- sqrt(mean((pred_xgb - V_test$Passengers)^2))
+print(RMSE_xgb)
+```
+
+### Comparación de Modelos
+Los resultados finales de cada modelo representan el desempeño que tuvieron frente a los datos de prueba después de haber sido entrenados. De forma general, aprovechando los recursos visuales del siguiente código, el mejor modelo es aquel que tiene RMSE y MAPE más bajos
+
+```{r}
+# Función para calcular MAPE
+mape <- function(actual, predicted) {
+  mean(abs((actual - predicted) / actual)) * 100
+}
+
+# Calcular MAPE para cada modelo utilizando las predicciones y los datos reales
+MAPE_ols1 <- mape(V_test$Passengers, pred_ols_model)
+MAPE_ols2 <- mape(V_test$Passengers, pred_ols_model2)
+MAPE_ols3 <- mape(V_test$Passengers, pred_ols_model3)
+MAPE_rf <- mape(V_test$Passengers, pred_rf)
+MAPE_cart <- mape(V_test$Passengers, pred_cart)
+MAPE_nn <- mape(V_test$Passengers, pred_nn)
+MAPE_svm <- mape(V_test$Passengers, pred_svm)
+MAPE_xgb <- mape(V_test$Passengers, pred_xgb)
+```
+
+```{r}
+# Definir las métricas y los valores para cada modelo
+metricas <- c("RMSE", "MAPE")
+values_ols1 <- c(RMSE_ols_model, MAPE_ols1)
+values_ols2 <- c(RMSE_ols_model2, MAPE_ols2)
+values_ols3 <- c(RMSE_ols_model3, MAPE_ols3)
+values_rf <- c(RMSE_rf, MAPE_rf)
+values_cart <- c(RMSE_cart, MAPE_cart)
+values_nn <- c(RMSE_nn, MAPE_nn)
+values_svm <- c(RMSE_svm, MAPE_svm)
+values_xgb <- c(RMSE_xgb, MAPE_xgb)
+
+# Crear el dataframe combinando los valores y las métricas
+TablaComparacion <- data.frame(
+  Metrica = rep(metricas, each = 8),  
+  OLS1 = values_ols1,
+  OLS2 = values_ols2,
+  OLS3 = values_ols3,
+  Random_Forest = values_rf,
+  CART = values_cart,
+  Neural_Network = values_nn,
+  SVM = values_svm,
+  XGBoost = values_xgb
+)
+
+# Usar kable de knitr para mostrar la tabla en un formato agradable
+library(knitr)
+kable(TablaComparacion)
+```
+
+### Predicción
+En este paso final, se utilizan los modelos entrenados para hacer predicciones sobre nuevos datos. Se calculan las predicciones para pasajeros en vuelos futuros, integrando varias fuentes de datos y ajustando los modelos para optimizar la precisión.
+
+```{r}
+# Left join con personas_capacidad
+vuelos_predict <- left_join(vuelos_predict, personas_capacidad, by = "Capacity")
+
+# Left join con destino_capacidad
+vuelos_predict <- left_join(vuelos_predict, destino_capacidad, by = "Destination_Type")
+
+vuelos_predict$STD_Mes <- match(vuelos_predict$STD_Mes, months)  # Asegurarse de que los meses estén en el mismo formato que se utilizó para el modelo
+
+# Crear la matriz de datos para XGBoost
+d_predict <- xgb.DMatrix(data = as.matrix(vuelos_predict[c("STD_hora", "diferencia_horas", "Capacity", "STD_DiaSemana", "capacidad_promedio_destino", "STD_Mes", "STA_Dia_del_mes")]))
+
+# Realizar predicciones para vuelos_predict
+pred_xgb_vuelos_predict <- predict(xgb_model, d_predict)
+
+# Redondear las predicciones sin decimales
+pred_xgb_vuelos_predict <- round(pred_xgb_vuelos_predict)
+
+# Asignar predicciones al dataframe original
+vuelos_predict$Passengers <- pred_xgb_vuelos_predict
+
+# Mostrar primeras Filas
+head(vuelos_predict)
+```
+
+## **Predicción de Ventas**
+
+### Partición de datos 
+Primero, se divide el conjunto de datos en dos partes iguales para entrenamiento y prueba. Este proceso es crucial para validar la efectividad de los modelos predictivos desarrollados, asegurando que estos puedan generalizar bien a nuevos datos. Se elimina la variable `ProductName` del conjunto de entrenamiento para simplificar el modelo, considerando solo variables cuantitativas y categorías relevantes.
+
+```{r}
+set.seed(123)
+
+# Dividir el conjunto de datos en entrenamiento (50%) y prueba (50%)
+trainIndex1 <- createDataPartition(y = df_alt$Quantity, p = 0.5, list = FALSE, times = 1)
+train <- df_alt[trainIndex1, ]
+test <- df_alt[-trainIndex1, ]
+
+train$ProductName <- NULL
+```
+
+### Modelos
+#### Regresión logística
+Se utiliza un modelo de regresión logística para predecir la cantidad de productos vendidos. Este modelo sirve como base para entender las relaciones lineales entre las características y la respuesta. Se calcula el error cuadrático medio (RMSE) para evaluar la precisión del modelo y se utiliza la función `vif` para verificar la multicolinealidad entre las variables predictoras.
+
+```{r}
+model_ols <- lm(Quantity ~ STD_DiaSemana+Passengers+Capacity+STD_Mes+STD_Dia_del_mes+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta+ruta, data = train)
+summary(model_ols)
+
+# Predicciones
+ols_predictions <- predict(model_ols, test)
+
+# RMSE
+RMSE_ols <- rmse(ols_predictions, test$Quantity)
+RMSE_ols
+
+cbind(test, ols_predictions)
+
+vif(model_ols)
+```
+
+#### Árbol de decisión
+Se desarrolla un modelo de árbol de decisión para capturar relaciones no lineales entre las variables. Este modelo es útil para interpretar cómo diferentes variables influyen en la cantidad de ventas. Se evalúa la precisión del modelo utilizando RMSE y el error porcentual absoluto medio (MAPE), y se visualiza la estructura del árbol para una mejor interpretación.
+
+```{r}
+tree_model = rpart(Quantity ~ Passengers+Capacity+STD_Mes+STD_DiaSemana+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, data=train)
+
+# Predicciones
+tree_predictions <- predict(tree_model, test)
+
+# RMSE
+RMSE_tree <- rmse(tree_predictions, test$Quantity)
+RMSE_tree
+
+# MAPE
+MAPE_tree <- mape(tree_predictions, test$Quantity)
+MAPE_tree
+
+cbind(test, tree_predictions)
+```
+
+
+#### Bosques Aleatorios
+
+Se implementa un modelo de bosques aleatorios con un número limitado de árboles para mantener un tiempo de ejecución razonable. Aunque se recomienda utilizar un número mayor de árboles para aumentar la precisión del modelo, la configuración actual busca un equilibrio entre precisión y eficiencia computacional. Se calculan tanto RMSE como MAPE para evaluar el desempeño del modelo.
+
+Lo ideal sería que el apartado de "ntree" contenga valores por encima de 300 para tener un modelo más robusto, ya que esto haría que el modelo genere cientos de árboles de decisión y elija el mejor. Sin embargo, por la cantidad de datos que contiene la base de datos, correr este chunk con esas especificaciones puede tomar incluso días generar el resultado con el poder de máquina con el que contamos actualmente. Le sugerimos fuertemente al cliente final replicar este modelo con un número de árboles mucho mayor para obtener mejores resultados. 
+
+```{r}
+rf_model <- randomForest(
+  Quantity ~ Passengers+Capacity+STD_Mes+STD_DiaSemana+ventas_totales_producto_hora+ventas_promedio_producto_hora+ventas_totales_producto_ruta+ventas_promedio_producto_ruta, 
+  data = train,
+  ntree = 10,         # Número de árboles en el bosque
+  mtry = 2,            # Número de variables a considerar en cada división del árbol
+  nodesize = 10,       # Tamaño mínimo del nodo terminal
+  maxnodes = NULL,     # Máximo número de nodos terminales permitidos
+  importance = TRUE,   # Calcular la importancia de las variables
+  proximity = FALSE,   # Calcular la matriz de proximidad
+  do.trace = FALSE     # Mostrar el progreso del proceso
+)
+
+
+# Predicciones
+rf_prediction <- predict(rf_model,test)
+
+# RMSE
+RMSE_rf <- rmse(rf_prediction, test$Quantity)
+RMSE_rf
+
+MAPE_rf <- mape(rf_prediction, test$Quantity)
+MAPE_rf
+```
+
+
+#### XGBoost
+Se ajusta un modelo XGBoost, optimizando varios parámetros para maximizar la precisión de la predicción. Este modelo es conocido por su alta eficacia en competiciones de ciencia de datos debido a su capacidad para manejar grandes cantidades de datos y capturar complejidades en los datos. Se evalúa el modelo utilizando RMSE y MAPE, y se visualiza la importancia de las variables para entender qué factores contribuyen más a las predicciones.
+
+Para poder realizar este modelo, es necesario acomodar los datos en matrices que nos ayuden a que esten en el formato correcto para ser digeridos por la librería.
+
+```{r}
+xg_df_alt <- df_alt %>%
+  dplyr::select(Quantity, Passengers,Capacity,STD_Mes,STD_DiaSemana,ventas_totales_producto_hora,ventas_promedio_producto_hora,ventas_totales_producto_ruta,ventas_promedio_producto_ruta)
+
+set.seed(123)
+
+# Validación cruzada
+cv_data_alt  <- createDataPartition(y = xg_df_alt$Quantity, p=0.5, list=F, times=1)
+cv_train_alt = xg_df_alt[cv_data_alt, ]
+cv_test_alt = xg_df_alt[-cv_data_alt, ]
+
+
+# Espeficar previamente la variable dependiente en el set de train (ubicación en la primera columna indicada por el num 1)
+train_x = data.matrix(cv_train_alt[, -1])
+train_y = data.matrix(cv_train_alt[,1])
+
+# Espeficar previamente la variable dependiente en el set de test (ubicación en la primera columna indicada por el num 1)
+test_x = data.matrix(cv_test_alt[, -1])
+test_y = data.matrix(cv_test_alt[, 1])
+
+
+# Crear la matriz para los tests de train y test del modelo XGBoost
+xgb_train <- xgb.DMatrix(data = train_x, label = as.vector(train_y))
+xgb_test  = xgb.DMatrix(data = test_x, label = test_y)
+
+# Evaluar
+watchlist = list(train=xgb_train, test=xgb_test)
+
+```
+
+##### Parameter Tunning
+
+Haciendo un proceso conocido como "tuning", podemos afectar los hyperparametros dentro de la creación de nuestro modelo XGBoost para que logré correrse bajo las condiciones óptimas y que podría ayudar a aumentar la precisión en predicción del modelo disminuyendo el error, visto en el RMSE *(Root Mean Square Error)*.
+
+```{r}
+# Definir los parámetros óptimos obtenidos
+nrounds <- 100
+max_depth <- 5
+eta <- 0.1
+gamma <- 0
+colsample_bytree <- 0.8
+min_child_weight <- 1
+subsample <- 0.8
+
+# Entrenar el modelo
+xgb_model <- xgb.train(params = list(max_depth = max_depth, 
+                                     eta = eta, 
+                                     gamma = gamma, 
+                                     colsample_bytree = colsample_bytree, 
+                                     min_child_weight = min_child_weight, 
+                                     subsample = subsample), 
+                       data = xgb_train, 
+                       nrounds = nrounds, 
+                       objective = "reg:squarederror")
+
+
+# Predicción del modelo - cv test alt
+prediction_xgb_test<-predict(xgb_model, xgb_test)
+
+# RMSE
+RMSE_xgboost <- rmse(prediction_xgb_test,cv_test_alt$Quantity)
+RMSE_xgboost
+
+MAPE_xgboost <- mape(prediction_xgb_test,cv_test_alt$Quantity)
+MAPE_xgboost
+
+# Importancia de las variables explicativas de acuerdo al modelo
+importance_matrix <- xgb.importance(model = xgb_model)
+xgb.plot.importance(importance_matrix, xlab = "Explanatory Variables X's Importance")
+
+
+```
+
+# Comparación de modelos
+Finalmente, se comparan todos los modelos en términos de RMSE y MAPE para determinar cuál modelo ofrece la mejor precisión y robustez en las predicciones. Este paso es crucial para seleccionar el modelo más adecuado para ser implementado en la práctica.
+
+```{r}
+metricas <- c("RMSE", "MAPE")
+ols_values <- c(RMSE_ols, MAPE_ols)
+rf_values <- c(RMSE_rf, MAPE_rf)
+tree_values <- c(RMSE_tree, MAPE_tree)
+XG_values <- c(RMSE_xgboost, MAPE_xgboost)
+
+
+# Crear el dataframe combinando los valores y las métricas
+TablaComparacion <- data.frame(
+  Metrica = rep(metricas, 2),  
+  Linear_regression = ols_values,
+  Decision_Tree = tree_values,
+  Random_Forest = rf_values,
+  XG_Boost = XG_values
+)
+
+TablaComparacion <- head(TablaComparacion, 2)
+kable(TablaComparacion)
+```
+
+### Predicción
+En este último paso, se utilizan los modelos seleccionados para hacer predicciones sobre nuevos datos de ventas, basándose en características específicas como la hora, ruta, cantidad de pasajeros, capacidad del avión, y otros factores relevantes. Estas predicciones ayudan a tomar decisiones informadas sobre la gestión del inventario y estrategias de marketing.
+
+#### Caracteristicas
+```{r}
+hora <- "10" 
+ruta <- "AB AK" 
+pasajeros = 240
+capacity = 280
+mes = "oct"
+dia_sem = 5
+Dmes = 17
+Dfmin = 160
+```
+
+```{r}
+v01 = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin)
+print(v01)
+```
