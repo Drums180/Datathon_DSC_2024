@@ -1,0 +1,8 @@
+---
+title: "Optimization Proposal"
+author: "Omega Datalords"
+date: "2024-05-05"
+output: html_document
+---
+
+

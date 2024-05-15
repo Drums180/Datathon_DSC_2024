@@ -542,14 +542,14 @@ Creación de nuevas variables que describen el comportamiento de las ventas de p
 hora_producto <- df_alt %>%
   group_by(STD_hora, ProductName) %>%
   summarise(ventas_totales_producto_hora = sum(Quantity),
-            ventas_promedio_producto_hora = mean(Quantity))
+            ventas_promedio_producto_hora = sum(Quantity)/122171)
 
 df_alt <- left_join(df_alt, hora_producto, by=c("STD_hora","ProductName"))
 
 ruta_producto <- df_alt %>%
   group_by(ruta, ProductName) %>%
   summarise(ventas_totales_producto_ruta = sum(Quantity),
-            ventas_promedio_producto_ruta = mean(Quantity))
+            ventas_promedio_producto_ruta = sum(Quantity)/122171)
 
 df_alt <- left_join(df_alt, ruta_producto, by=c("ruta","ProductName"))
 ```
@@ -1027,8 +1027,6 @@ MAPE_xgboost
 # Importancia de las variables explicativas de acuerdo al modelo
 importance_matrix <- xgb.importance(model = xgb_model)
 xgb.plot.importance(importance_matrix, xlab = "Explanatory Variables X's Importance")
-
-
 ```
 
 # Comparación de modelos
@@ -1058,19 +1056,53 @@ kable(TablaComparacion)
 ### Predicción
 En este último paso, se utilizan los modelos seleccionados para hacer predicciones sobre nuevos datos de ventas, basándose en características específicas como la hora, ruta, cantidad de pasajeros, capacidad del avión, y otros factores relevantes. Estas predicciones ayudan a tomar decisiones informadas sobre la gestión del inventario y estrategias de marketing.
 
-#### Caracteristicas
+#### Imputación de Variables
 ```{r}
-hora <- "10" 
-ruta <- "AB AK" 
-pasajeros = 240
-capacity = 280
-mes = "oct"
-dia_sem = 5
-Dmes = 17
-Dfmin = 160
+# Paso 1: Crear la columna 'ruta' en vuelos_predict
+vuelos_predict$ruta <- paste(vuelos_predict$DepartureStation, vuelos_predict$ArrivalStation)
+
+# Paso 2: Expandir vuelos_predict para incluir cada valor único de ProductName
+valores_unicos_productName <- unique(df_alt$ProductName)
+vuelos_predict_expandido <- merge(vuelos_predict, data.frame(ProductName=valores_unicos_productName), by=NULL)
+
+# Paso 3: Left join con hora_producto y ruta_producto
+hora_producto$STD_hora <- as.double(as.character(hora_producto$STD_hora))
+
+vuelos_predict_final <- left_join(vuelos_predict_expandido, hora_producto, by=c("STD_hora", "ProductName"))
+vuelos_predict_final <- left_join(vuelos_predict_final, ruta_producto, by=c("ruta", "ProductName"))
 ```
 
 ```{r}
-v01 = aeroventas(hora, ruta, pasajeros, capacity, mes, dia_sem, Dmes, Dfmin)
-print(v01)
+# Reemplazar todos los NA con 0 en el dataframe
+vuelos_predict_final <- vuelos_predict_final %>%
+  mutate(across(everything(), ~replace_na(., 0)))
+
+# Definir los Flight_ID específicos que deseas seleccionar
+specific_flight_ids <- c("4d95c80c854b637e6fdf951e85f1a05b",
+                         "2385ceefd5123f0cdf95994f9978d216",
+                         "35b62c4a09ba0a69e0c9b9a006d83f18",
+                         "c073f59d3bea0a295cc8e466265c28c1",
+                         "b5b6665fdc1048a63fd7e2f224a51b6c")
+
+# Filtrar el dataframe para incluir solo los Flight_ID específicos
+selected_flights_vuelos <- vuelos_predict_final %>%
+  filter(Flight_ID %in% specific_flight_ids)
+```
+
+```{r}
+# Seleccionar solo las columnas que se usaron en el entrenamiento del modelo, ajustar según las columnas usadas en tu modelo
+xg_data_vuelos <- selected_flights_vuelos %>%
+  dplyr::select(Passengers, Capacity, STD_Mes, STD_DiaSemana, ventas_totales_producto_hora, ventas_promedio_producto_hora, ventas_totales_producto_ruta, ventas_promedio_producto_ruta)
+
+# Convertir los datos a matrix para XGBoost
+xg_matrix_vuelos <- xgb.DMatrix(data = as.matrix(xg_data_vuelos))
+
+# Asumiendo que xgb_model ya está cargado y disponible en la sesión
+predictions <- predict(xgb_model, xg_matrix_vuelos)
+
+# Asignar las predicciones a una nueva columna 'Quantity' en el dataframe
+selected_flights_vuelos$Quantity <- round(predictions)  # Redondear las predicciones si es necesario
+
+# Mostrar los datos con las predicciones
+print(selected_flights_vuelos)
 ```
