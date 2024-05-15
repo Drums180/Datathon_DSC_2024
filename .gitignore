@@ -4,3 +4,6 @@
 .Ruserdata
 databases/Sales TEC_Valid.csv
 databases/Sales_Clean.csv
+databases/AeroMaestro.csv
+Enviroment.RDataTmp
+Environment.RData
